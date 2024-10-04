@@ -1,0 +1,43 @@
+# Streamlit
+streamlit==1.38.0
+
+# OpenAI API
+openai==0.27.0
+
+# AWS SDK for Python
+boto3==1.35.11
+botocore==1.35.11
+s3transfer==0.10.2
+
+# Data processing and utilities
+numpy==1.24.4
+pandas==2.0.3
+scikit-learn==1.3.0
+
+# Visualization
+altair==5.4.1
+pydeck==0.9.1
+
+# Python version compatibility management
+setuptools==65.5.0
+distlib==0.3.7  # distutils 관련 대체 라이브러리
+
+# Network and parsing tools
+requests==2.32.3
+urllib3==1.26.20
+
+# 기타 유틸리티
+rich==13.8.0
+tenacity==8.5.0  # 안정적인 API 호출을 위해 사용하는 재시도 모듈
+
+# Git 및 버전 관리
+gitpython==3.1.43
+
+# JSON schema validation
+jsonschema==4.23.0
+
+# 캐시 관련 라이브러리 (필요 시)
+cachetools==5.5.0
+
+# 추가적으로 필요한 패키지들
+blinker==1.8.2  # 스트림릿의 내부 신호 처리용
