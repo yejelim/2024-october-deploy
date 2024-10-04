@@ -20,7 +20,6 @@ pydeck==0.9.1
 
 # Python version compatibility management
 setuptools==65.5.0
-distlib==0.3.7  # distutils 관련 대체 라이브러리
 
 # Network and parsing tools
 requests==2.32.3
