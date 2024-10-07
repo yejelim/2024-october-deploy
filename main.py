@@ -353,20 +353,16 @@ def generate_chat_response(user_question):
             conversation_history += f"사용자: {chat['message']}\n" if chat['role'] == 'user' else f"모델: {chat['message']}\n"
 
         # GPT에게 전달할 프롬프트
-        prompt = (
-            f"이전 대화:\n{conversation_history}\n"
-            f"----\n"
-            f"임상 노트:\n{user_input}\n"
-            f"----\n"
-            f"모델의 분석 결과:\n{overall_decision}\n"
-            f"세부 설명:\n{'\n'.join(explanations)}\n"
-            f"----\n"
-            f"사용자의 질문: {user_question}\n"
-            f"----\n"
-            f"위 정보를 바탕으로 사용자에게 도움이 되는 답변을 제공해주세요."
+        prompt_template = st.secrets["openai"]["prompt_chatting"]
+
+        prompt = prompt_template.format(
+            conversation_history=conversation_history,
+            user_input=user_input,
+            overall_decision=overall_decision,
+            explanations='\n'.join(explanations),
+            user_question=user_question
         )
    
-
         with st.spinner("응답 생성 중..."):
             response = openai.ChatCompletion.create(
                 model='gpt-4o-mini',
