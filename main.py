@@ -345,7 +345,6 @@ def display_chat_interface():
             add_to_conversation('user', user_question)
             model_response = generate_chat_response(user_question)
             add_to_conversation('assistant', model_response)
-            st.session_state.chat_input = ''
 
 
 # 대화 메시지를 표시하는 함수
