@@ -286,7 +286,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
                 score = int(score_match.group(1))
                 if score >= 7:
                     with st.expander(f"항목 {idx} (score: {score})"):
-                        st.text(f"세부인정사항: {doc['메타데이터']['세부인정사항']}")
+                        st.text_area(f"세부인정사항:", doc['메타데이터']['세부인정사항'], height=300)
                     relevant_results.append(doc['메타데이터'])
             else:
                 st.warning(f"항목 {idx}의 점수를 추출하지 못했습니다. '삭감 여부 확인' 버튼을 다시한번 눌러주세요.")
@@ -444,6 +444,11 @@ def main():
         if not structured_input or not embedding:
             return
         
+        st.session_state.structured_input = structured_input
+        st.session_state.embedding = embedding
+        st.session_state.vectors = vectors
+        st.session_state.metadatas = metadatas
+
         # 4. 검색된 급여기준 및 분석 결과 출력
         relevant_results, full_response = display_results(embedding, vectors, metadatas, structured_input)
         if not relevant_results:
@@ -452,8 +457,16 @@ def main():
         
         # 5. 개별 기준에 대한 분석
         overall_decision, explanations = analyze_criteria(relevant_results, user_input)
+        st.session_state.overall_decision = overall_decision
+        st.session_state.explanations = explanations
+        st.session_state.relevant_results = relevant_results
+        st.session_state.full_response = full_response
+        st.session_state.results_displayed = True
+
+    # 세션 상태에 결과가 저장되어 있으면 출력
+    if st.session_state.get('results_displayed', False):
         st.subheader("심사 결과")
-        st.write(overall_decision)
+        st.write(st.session_state.overall_decision)
 
         # 6. 개별 기준에 대한 분석 결과 표시
         st.subheader("개별 기준에 대한 심사 결과")
@@ -462,19 +475,6 @@ def main():
                 st.write(explanation['content_after_4'])
                 
 
-        # 필요한 컨텍스트 정보를 세션 상태에 저장
-        st.session_state.overall_decision = overall_decision
-        st.session_state.explanations = explanations
-        st.session_state.results_displayed = True
-
-        # 채팅 시작하기 버튼을 사용자가 명시적으로 누르면 채팅기능 시작
-    if st.session_state.results_displayed and not st.session_state.chat_started:
-        if st.button("채팅 시작하기"):
-            st.session_state.chat_started = True
-
-
-    # 채팅 인터페이스 표시
-    if 'chat_started' in st.session_state and st.session_state.chat_started:
         display_chat_interface()
 
 
