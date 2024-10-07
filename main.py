@@ -9,6 +9,7 @@ import re
 from sklearn.metrics.pairwise import cosine_similarity
 
 # 세션 상태 변수 초기화
+# 세션 상태 변수 초기화
 if 'conversation' not in st.session_state:
     st.session_state.conversation = []
 if 'chat_started' not in st.session_state:
@@ -21,6 +22,9 @@ if 'explanations' not in st.session_state:
     st.session_state.explanations = []
 if 'results_displayed' not in st.session_state:
     st.session_state.results_displayed = False
+if 'chat_input' not in st.session_state:
+    st.session_state.chat_input = ''  # chat_input 기본값 설정
+
 
 
 # OpenAI API 키 설정 (Streamlit secrets 사용)
@@ -340,7 +344,6 @@ def display_chat_interface():
             model_response = generate_chat_response(user_question)
             add_to_conversation('assistant', model_response)
             st.session_state.chat_input = ''
-            st.experimental_rerun()
 
 
 # 대화 메시지를 표시하는 함수
