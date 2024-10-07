@@ -434,7 +434,6 @@ def main():
         # 채팅 시작하기 버튼을 사용자가 명시적으로 누르면 채팅기능 시작
         if st.button("채팅 시작하기"):
             st.session_state.chat_started = True
-            st.experimental_rerun()
 
     # 채팅 인터페이스 표시
     if 'chat_started' in st.session_state and st.session_state.chat_started:
