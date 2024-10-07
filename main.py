@@ -12,6 +12,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 # OpenAI API 키 설정 (Streamlit secrets 사용)
 openai.api_key = st.secrets["openai"]["openai_api_key"]
 
+# 채팅시 세션의 상태 초기화 필요: 새로고침 누르면 이전 채팅기록 사라짐
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():
@@ -201,7 +205,7 @@ def process_user_input(user_input):
         embedding = get_embedding_from_openai(structured_input)
         if not embedding:
             st.error("임베딩 생성에 문제가 있습니다.")
-            return None
+            return None, None
     
     st.write("임베딩 생성 완료!")
     return structured_input, embedding
@@ -304,6 +308,88 @@ def analyze_criteria(relevant_results, user_input):
     return overall_decision, explanations
 
 
+# 채팅 기능 추가: 이전 내용들을 대화 내역에 추가하는 함수
+def add_to_conversation(role, message):
+    st.session_state.conversation.append({"role": role, "message": message})
+
+# 채팅 인터페이스를 표시하는 함수
+def display_chat_interface():
+    st.header("채팅하기")
+    display_chat_messages()
+
+    user_question = st.text_input("질문을 입력하세요:", key="chat_input")
+    if st.button("전송", key="send_button"):
+        if user_question.strip() == "":
+            st.warning("질문을 입력해주세요.")
+        else:
+            add_to_conversation('user', user_question)
+            model_response = generate_chat_response(user_question)
+            add_to_conversation('assistant', model_response)
+            st.experimental_rerun()
+
+
+# 대화 메시지를 표시하는 함수
+def display_chat_messages():
+    for chat in st.session_state.conversation:
+        if chat['role'] == 'user':
+            with st.chat_message("user"):
+                st.markdown(chat['message'])
+        else:
+            with st.chat_message("assistant"):
+                st.markdowns(chat['message'])
+
+
+# 채팅에서 응답을 생성하는 함수
+def generate_chat_response(user_question):
+    try:
+        # 이전의 컨텍스트 가져오기
+        user_input = st.session_state.user_input
+        overall_decision = st.session_state.overall_decision
+        explanations = st.session_state.explanations
+
+        # 대화 내역 가져오기
+        conversation_history = ""
+        for chat in st.session_state.conversation:
+            conversation_history += f"사용자: {chat['message']}\n" if chat['role'] == 'user' else f"모델: {chat['message']}\n"
+
+        # GPT에게 전달할 프롬프트
+        prompt = f"""
+        이전 대화:
+        {conversation_history}
+        ----
+        임상 노트:
+        {user_input}
+        ----
+        모델의 분석 결과:
+        {overall_decision}
+        세부 설명:
+        {'\n'.join(explanations)}
+        ----
+        사용자의 질문: {user_question}
+        ----
+        위 정보를 바탕으로 사용자에게 도움이 되는 답변을 제공해주세요.
+        """        
+
+        with st.spinner("응답 생성 중..."):
+            response = openai.ChatCompletion.create(
+                model='gpt-4o-mini',
+                messages=[
+                    {"role": "system", "content": "당신은 의료보험 분야의 전문가 어시스턴트입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+
+        model_output = response.choices[0].message.content.strip()
+        return model_output
+    
+    except Exception as e:
+        st.error(f"응답 생성 중 오류 발생: {e}")
+        return "죄송합니다. 요청을 처리하는 중 문제가 발생했습니다."
+
+
+
 def main():
     st.title("의료비 삭감 판정 어시스트 - beta version.")
 
@@ -333,7 +419,7 @@ def main():
         # 4. 검색된 급여기준 및 분석 결과 출력
         relevant_results, full_response = display_results(embedding, vectors, metadatas, structured_input)
         if not relevant_results:
-            st.warning("검색 결과 중 유효한 항목이 없습니다. 적절한 분과를 선택하셨는지 확인해주세요.")
+            st.warning("검색 결과 중 유효한 항목이 없습니다. 임상노트가 제대로 입력되었는지 확인해주세요.")
             return
         
         # 5. 개별 기준에 대한 분석
@@ -346,6 +432,21 @@ def main():
         for explanation in explanations:
             with st.expander("개별 분석 보기"):
                 st.write(explanation)
+
+        # 필요한 컨텍스트 정보를 세션 상태에 저장
+        st.session_state.user_input = user_input
+        st.session_state.overall_decision = overall_decision
+        st.session_state.explanations = explanations
+
+        # 채팅 시작하기 버튼을 사용자가 명시적으로 누르면 채팅기능 시작
+        if st.button("채팅 시작하기"):
+            st.session_state.chat_started = True
+            st.experimental_rerun()
+
+    # 채팅 인터페이스 표시
+    if 'chat_started' in st.session_state and st.session_state.chat_started:
+        display_chat_interface()
+
 
 if __name__ == "__main__":
     main()
