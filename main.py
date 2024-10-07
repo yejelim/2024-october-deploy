@@ -450,7 +450,7 @@ def main():
         st.session_state.results_displayed = True
 
         # 채팅 시작하기 버튼을 사용자가 명시적으로 누르면 채팅기능 시작
-    if st.session_state.results_displyed and not st.session_state.chat_started:
+    if st.session_state.results_displayed and not st.session_state.chat_started:
         if st.button("채팅 시작하기"):
             st.session_state.chat_started = True
 
