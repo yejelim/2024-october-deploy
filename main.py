@@ -347,6 +347,24 @@ def add_to_conversation(role, message):
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
     st.header("채팅하기")
+
+    # 채팅 메시지를 표시하기 전에 사용자 입력을 처리합니다.
+    # st.chat_input을 사용하여 Enter 키로 입력을 받을 수 있습니다.
+    if user_question := st.chat_input("질문을 입력하세요"):
+        if user_question.strip() == "":
+            st.warning("질문을 입력해주세요.")
+        else:
+            # 사용자 메시지 추가 및 표시
+            add_to_conversation('user', user_question)
+            with st.chat_message("user"):
+                st.markdown(user_question)
+
+            # 모델 응답 생성 및 표시
+            model_response = generate_chat_response(user_question)
+            add_to_conversation('assistant', model_response)
+            with st.chat_message("assistant"):
+                st.markdown(model_response)
+
     display_chat_messages()
 
 # 입력값을 변수로 관리
@@ -479,7 +497,7 @@ def main():
                 st.write(explanation['content_after_4'])
                 
 
-        display_chat_interface()
+    display_chat_interface()
 
 
 if __name__ == "__main__":
