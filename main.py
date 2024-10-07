@@ -262,7 +262,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 
         relevant_results = []
         for idx, doc in enumerate(top_results, 1):
-            score_match = re.search(rf"항목 {idx}:\s*(\d+)", full_response)
+            score_match = re.search(rf"항목 {idx}:\s*(\d+)".format(idx), full_response)
             if score_match:
                 score = int(score_match.group(1))
                 if score >= 7:
