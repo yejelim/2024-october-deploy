@@ -335,7 +335,9 @@ def display_chat_interface():
     st.header("채팅하기")
     display_chat_messages()
 
+# 입력값을 변수로 관리
     user_question = st.text_input("질문을 입력하세요:", key="chat_input")
+
     if st.button("전송", key="send_button"):
         if user_question.strip() == "":
             st.warning("질문을 입력해주세요.")
