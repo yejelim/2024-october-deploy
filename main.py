@@ -448,6 +448,9 @@ def main():
 
     # 2. 특정 분과 선택시 해당 분과의 데이터 로드
     if st.button("삭감 여부 확인"):
+        st.session_state.conversation = []
+        st.session_state.results_displayed = False
+
         # 사용자 정보가 입력 되어야지만 삭감판정 가능
         if len(user_input.strip()) < 10:
             st.error("유효한 임상 노트 입력이 필요합니다. 최소 10자 이상의 텍스트를 입력해 주세요.")
@@ -497,7 +500,7 @@ def main():
                 st.write(explanation['content_after_4'])
                 
 
-    display_chat_interface()
+        display_chat_interface()
 
 
 if __name__ == "__main__":
