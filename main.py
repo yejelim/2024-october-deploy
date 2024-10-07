@@ -217,7 +217,8 @@ def process_user_input(user_input):
             st.error("입력 텍스트 분석에 실패했습니다.")
 
     st.write("입력 처리 완료!")
-    st.write(structured_input) # 이 부분은 필요에 따라 숨겨도 됨.
+    with st.expander("구조화된 입력 보기"):
+        st.write(structured_input) # 이 부분은 필요에 따라 숨겨도 됨.
 
     with st.spinner("임베딩 생성 중..."):
         embedding = get_embedding_from_openai(structured_input)
@@ -317,7 +318,19 @@ def analyze_criteria(relevant_results, user_input):
                     temperature=0.3,
                 )
                 analysis = response['choices'][0]['message']['content'].strip()
-                explanations.append(f"기준 {idx}에 대한 분석: \n{analysis}")
+
+                index_of_4 = analysis.find("4.")
+                if index_of_4 != -1:
+                    content_after_4 = analysis[index_of_4+2:].strip()
+                else:
+                    content_after_4 = analysis
+
+                    explanations.append({
+                        'index': idx,
+                        'full_analysis': analysis,
+                        'content_after_4': content_after_4
+                    })
+
                 if "의료비는 삭감됩니다." in analysis:
                     overall_decision = "삭감될 가능성 높음"
             except Exception as e:
@@ -446,7 +459,8 @@ def main():
         st.subheader("개별 기준에 대한 심사 결과")
         for explanation in explanations:
             with st.expander("개별 분석 보기"):
-                st.write(explanation)
+                st.write(explanation['content_after_4'])
+                
 
         # 필요한 컨텍스트 정보를 세션 상태에 저장
         st.session_state.overall_decision = overall_decision
