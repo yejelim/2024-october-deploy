@@ -320,7 +320,7 @@ def analyze_criteria(relevant_results, user_input):
                 )
                 analysis = response['choices'][0]['message']['content'].strip()
 
-                index_of_4 = analysis.find("4.")
+                index_of_4 = analysis.find("근거")
                 if index_of_4 != -1:
                     content_after_4 = analysis[index_of_4+2:].strip()
                 else:
@@ -385,6 +385,9 @@ def generate_chat_response(user_question):
         for chat in st.session_state.conversation:
             conversation_history += f"사용자: {chat['message']}\n" if chat['role'] == 'user' else f"모델: {chat['message']}\n"
 
+        # explanations에서 문자열 리스트 생성
+        explanations_texts = [explanation['content_after_4'] for explanation in explanations]
+
         # GPT에게 전달할 프롬프트
         prompt_template = st.secrets["openai"]["prompt_chatting"]
 
@@ -392,7 +395,7 @@ def generate_chat_response(user_question):
             conversation_history=conversation_history,
             user_input=user_input,
             overall_decision=overall_decision,
-            explanations='\n'.join(explanations),
+            explanations='\n'.join(explanations_texts),
             user_question=user_question
         )
    
