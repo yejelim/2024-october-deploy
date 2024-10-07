@@ -286,7 +286,8 @@ def display_results(embedding, vectors, metadatas, structured_input):
                 score = int(score_match.group(1))
                 if score >= 7:
                     with st.expander(f"항목 {idx} (score: {score})"):
-                        st.text_area(f"세부인정사항:", doc['메타데이터']['세부인정사항'], height=300)
+                        st.write(f"세부인정사항:")
+                        st.write(doc['메타데이터']['세부인정사항'])
                     relevant_results.append(doc['메타데이터'])
             else:
                 st.warning(f"항목 {idx}의 점수를 추출하지 못했습니다. '삭감 여부 확인' 버튼을 다시한번 눌러주세요.")
@@ -325,11 +326,11 @@ def analyze_criteria(relevant_results, user_input):
                 else:
                     content_after_4 = analysis
 
-                    explanations.append({
-                        'index': idx,
-                        'full_analysis': analysis,
-                        'content_after_4': content_after_4
-                    })
+                explanations.append({
+                    'index': idx,
+                    'full_analysis': analysis,
+                    'content_after_4': content_after_4
+                })
 
                 if "의료비는 삭감됩니다." in analysis:
                     overall_decision = "삭감될 가능성 높음"
@@ -470,7 +471,7 @@ def main():
 
         # 6. 개별 기준에 대한 분석 결과 표시
         st.subheader("개별 기준에 대한 심사 결과")
-        for explanation in explanations:
+        for explanation in st.session_state.explanations:
             with st.expander("개별 분석 보기"):
                 st.write(explanation['content_after_4'])
                 
