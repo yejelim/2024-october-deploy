@@ -8,6 +8,20 @@ import numpy as np
 import re
 from sklearn.metrics.pairwise import cosine_similarity
 
+# 세션 상태 변수 초기화
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+if 'chat_started' not in st.session_state:
+    st.session_state.chat_started = False
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ''
+if 'overall_decision' not in st.session_state:
+    st.session_state.overall_decision = ''
+if 'explanations' not in st.session_state:
+    st.session_state.explanations = []
+if 'results_displayed' not in st.session_state:
+    st.session_state.results_displayed = False
+
 
 # OpenAI API 키 설정 (Streamlit secrets 사용)
 openai.api_key = st.secrets["openai"]["openai_api_key"]
@@ -262,7 +276,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 
         relevant_results = []
         for idx, doc in enumerate(top_results, 1):
-            score_match = re.search(rf"항목 {idx}:\s*(\d+)".format(idx), full_response)
+            score_match = re.search(r"항목 {}:\s*(\d+)".format(idx), full_response)
             if score_match:
                 score = int(score_match.group(1))
                 if score >= 7:
@@ -325,6 +339,7 @@ def display_chat_interface():
             add_to_conversation('user', user_question)
             model_response = generate_chat_response(user_question)
             add_to_conversation('assistant', model_response)
+            st.session_state.chat_input = ''
             st.experimental_rerun()
 
 
@@ -336,7 +351,7 @@ def display_chat_messages():
                 st.markdown(chat['message'])
         else:
             with st.chat_message("assistant"):
-                st.markdowns(chat['message'])
+                st.markdown(chat['message'])
 
 
 # 채팅에서 응답을 생성하는 함수
@@ -389,6 +404,9 @@ def main():
     # 1. 사용자 정보 및 입력 수집
     occupation, other_occupation, department, user_input = collect_user_input()
 
+    if user_input:
+        st.session_state.user_input = user_input
+
     # 2. 특정 분과 선택시 해당 분과의 데이터 로드
     if st.button("삭감 여부 확인"):
         # 사용자 정보가 입력 되어야지만 삭감판정 가능
@@ -397,12 +415,12 @@ def main():
             return # 함수 종료됨, 이후 프로세스 진행 안됨
 
         embedded_data = load_data_if_department_selected(department)
-        if embedded_data is None or not embedded_data:
+        if not embedded_data:
             st.error("데이터 로드 실패, 또는 해당 분과의 데이터가 아직 없습니다.")
             return
-        else: 
-            vectors, metadatas = extract_vectors_and_metadata(embedded_data)
-            st.write("해당 분과의 급여기준 로드 완료")
+
+        vectors, metadatas = extract_vectors_and_metadata(embedded_data)
+        st.write("해당 분과의 급여기준 로드 완료")
         
         # 3. 사용자의 입력 처리
         structured_input, embedding = process_user_input(user_input) 
@@ -427,13 +445,15 @@ def main():
                 st.write(explanation)
 
         # 필요한 컨텍스트 정보를 세션 상태에 저장
-        st.session_state.user_input = user_input
         st.session_state.overall_decision = overall_decision
         st.session_state.explanations = explanations
+        st.session_state.results_displayed = True
 
         # 채팅 시작하기 버튼을 사용자가 명시적으로 누르면 채팅기능 시작
+    if st.session_state.results_displyed and not st.session_state.chat_started:
         if st.button("채팅 시작하기"):
             st.session_state.chat_started = True
+
 
     # 채팅 인터페이스 표시
     if 'chat_started' in st.session_state and st.session_state.chat_started:
