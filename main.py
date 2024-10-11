@@ -10,6 +10,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # 세션 상태 변수 초기화
 # 세션 상태 변수 초기화
+if 'is_clinical_note' not in st.session_state:
+    st.session_state.is_clinical_note = False
 if 'conversation' not in st.session_state:
     st.session_state.conversation = []
 if 'chat_started' not in st.session_state:
@@ -30,14 +32,39 @@ if 'chat_input' not in st.session_state:
 # OpenAI API 키 설정 (Streamlit secrets 사용)
 openai.api_key = st.secrets["openai"]["openai_api_key"]
 
-# 채팅시 세션의 상태 초기화 필요: 새로고침 누르면 이전 채팅기록 사라짐
-if 'conversation' not in st.session_state:
-    st.session_state.conversation = []
 
+def check_if_clinical_note(text):
+    try:
+        # GPT 프롬프트 설정
+        prompt = f"다음 텍스트가 임상 노트인지 여부를 판단해주세요:\n\n{text}\n\n이 텍스트는 임상 노트입니까? (예/아니오)"
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "당신은 임상 문서를 판별하는 전문가입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=10,
+            temperature=0.5,
+        )
+
+        # 응답에서 예/아니오 추출
+        answer = response.choices[0].message.content.strip().lower()
+        return "예" in answer
+    except Exception as e:
+        st.error(f"임상 노트 판별 중 오류 발생: {e}")
+        return False
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():
     user_input = st.text_area("임상노트를 입력하세요:", height=500)
+    if user_input:
+        # 임상노트 여부 확인
+        is_clinical_note = check_if_clinical_note(user_input)
+        if not is_clinical_note:
+            st.warning("입력한 텍스트가 임상노트가 아닙니다. 텍스트를 확인해주세요.")
+        else:
+            st.session_state.user_input = user_input
+            st.session_state.is_clinical_note = True
     st.subheader("어떤 분야에 종사하시나요?")
     occupation = st.radio(
         "직업을 선택하세요:",
@@ -65,6 +92,7 @@ def collect_user_input():
     return occupation, other_occupation, department, user_input
 
 
+
 # 분과 데이터셋: 추가될 때마다 업데이트 할 부분
 department_datasets = {
     "신경외과 (Neuro-Surgery)": {
@@ -76,7 +104,7 @@ department_datasets = {
         "file_key": "vascular_embedded_data.json" # 나중에 이 이름으로 파일 생성필요
     },
     "대장항문외과 (Colorectal Surgery)": {
-        "bucket_name": "hemochat_rag_database",
+        "bucket_name": "hemochat-rag-database",
         "file_key": "colorectal_embedded_data.json"
     }
 }
@@ -315,12 +343,12 @@ def analyze_criteria(relevant_results, user_input):
                         {"role": "system", "content": "당신은 의료 문서를 분석하는 보험 전문가입니다."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=10000,
+                    max_tokens=8192,
                     temperature=0.3,
                 )
                 analysis = response['choices'][0]['message']['content'].strip()
 
-                index_of_4 = analysis.find("근거")
+                index_of_4 = analysis.find("4.")
                 if index_of_4 != -1:
                     content_after_4 = analysis[index_of_4+2:].strip()
                 else:
@@ -346,9 +374,11 @@ def add_to_conversation(role, message):
 
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
-    st.header("채팅하기")
+    with st.sidebar:
+        st.header("채팅하기")
 
-    # 채팅 메시지를 표시하기 전에 사용자 입력을 처리합니다.
+    display_chat_messages()
+
     # st.chat_input을 사용하여 Enter 키로 입력을 받을 수 있습니다.
     if user_question := st.chat_input("질문을 입력하세요"):
         if user_question.strip() == "":
@@ -365,18 +395,6 @@ def display_chat_interface():
             with st.chat_message("assistant"):
                 st.markdown(model_response)
 
-    display_chat_messages()
-
-# 입력값을 변수로 관리
-    user_question = st.text_input("질문을 입력하세요:", key="chat_input")
-
-    if st.button("전송", key="send_button"):
-        if user_question.strip() == "":
-            st.warning("질문을 입력해주세요.")
-        else:
-            add_to_conversation('user', user_question)
-            model_response = generate_chat_response(user_question)
-            add_to_conversation('assistant', model_response)
 
 
 # 대화 메시지를 표시하는 함수
