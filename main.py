@@ -101,7 +101,7 @@ department_datasets = {
     }, # 이후에는 외과학회 염두에 둔 데이터셋 먼저 넣기
     "혈관외과 (Vascular Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "tagged_vascular_filtered_criterion.json" # 나중에 이 이름으로 파일 생성필요
+        "file_key": "tagged_vascular_filtered_criterion_fixed.json" # 나중에 이 이름으로 파일 생성필요
     },
     "대장항문외과 (Colorectal Surgery)": {
         "bucket_name": "hemochat-rag-database",
