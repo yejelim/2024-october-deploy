@@ -101,7 +101,7 @@ department_datasets = {
     }, # 이후에는 외과학회 염두에 둔 데이터셋 먼저 넣기
     "혈관외과 (Vascular Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "vascular_embedded_data.json" # 나중에 이 이름으로 파일 생성필요
+        "file_key": "tagged_vascular_filtered_criterion.json" # 나중에 이 이름으로 파일 생성필요
     },
     "대장항문외과 (Colorectal Surgery)": {
         "bucket_name": "hemochat-rag-database",
@@ -158,12 +158,23 @@ def load_data_from_s3(bucket_name, file_key):
     s3_client = boto3.client(
         's3',
         aws_access_key_id=st.secrets["aws"]["access_key"],
-        aws_secret_access_key=st.secrets["aws"]["secret_key"]
+        aws_secret_access_key=st.secrets["aws"]["secret_key"],
+        region_name = 'ap-northeast-2'
     )
+
+    st.write(f"Loading data from bucket: {bucket_name}, key: {file_key}")
+    
     # S3에서 파일 다운로드
-    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    data = response['Body'].read().decode('utf-8')
-    return json.loads(data)
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        data = response['Body'].read().decode('utf-8')
+        return json.loads(data)
+    except s3_client.exceptions.NoSuchKey:
+        st.error(f"The key '{file_key}' does not exist in bucket '{bucket_name}'.")
+        return None
+    except Exception as e:
+        st.error(f"Error loading data from S3: {e}")
+        return None
 
 
 # JSON에서 임베딩 벡터와 메타데이터 추출
