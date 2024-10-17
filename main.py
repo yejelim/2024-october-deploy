@@ -27,7 +27,8 @@ def initialize_session_state():
         'retry_type': None,              # 'score_parsing' 또는 'embedding_search'
         'vectors': [],
         'metadatas': [],
-        'full_response': ''
+        'full_response': '',
+        'scores': {}
     }
     for key, value in session_state_defaults.items():
         if key not in st.session_state:
@@ -263,7 +264,7 @@ def extract_scores(full_response, num_items):
         score_match = re.search(rf"항목 {idx}:\s*(\d+)", full_response)
         if score_match:
             scores[idx] = int(score_match.group(1))
-    return scores if scores else None
+    return scores if len(scores) == num_items else None  # 모든 스코어를 추출하지 못하면 None 반환
 
 # 재시도 케이스: 스코어 추출 실패 시 재시도
 def retry_scoring_gpt(structured_input, items):
@@ -282,30 +283,33 @@ def retry_embedding_and_search(department, user_input, vectors, metadatas):
     if st.session_state.embedding_search_attempt < st.session_state.max_attempts:
         st.session_state.embedding_search_attempt += 1
         st.warning(f"연관성이 떨어지는 결과가 나왔습니다. 임베딩 및 검색 과정을 다시 수행합니다... (시도 {st.session_state.embedding_search_attempt}/{st.session_state.max_attempts})")
-        # 임베딩 데이터 로드
-        embedded_data = load_data_if_department_selected(department)
-        if not embedded_data:
-            st.error("데이터 로드 실패, 또는 해당 분과의 데이터가 아직 없습니다.")
-            return False
-
-        vectors, metadatas = extract_vectors_and_metadata(embedded_data)
-        st.success("해당 분과의 급여기준 로드 완료")
         
-        # 사용자의 입력 처리
-        structured_input, embedding = process_user_input(user_input) 
+        # 데이터가 이미 로드되어 있는지 확인
+        if not vectors or not metadatas:
+            # 데이터가 없다면 로드
+            embedded_data = load_data_if_department_selected(department)
+            if not embedded_data:
+                st.error("데이터 로드 실패, 또는 해당 분과의 데이터가 아직 없습니다.")
+                return False
+            vectors, metadatas = extract_vectors_and_metadata(embedded_data)
+            st.session_state.vectors = vectors
+            st.session_state.metadatas = metadatas
+        else:
+            # 데이터가 이미 로드되어 있으므로 재로딩하지 않음
+            vectors = st.session_state.vectors
+            metadatas = st.session_state.metadatas
+        
+        # 사용자 입력 처리
+        structured_input, embedding = process_user_input(user_input)
         if not structured_input or not embedding:
             return False
         
         st.session_state.structured_input = structured_input
         st.session_state.embedding = embedding
-        st.session_state.vectors = vectors
-        st.session_state.metadatas = metadatas
 
         # 검색된 급여기준 및 분석 결과 출력
         relevant_results, full_response = display_results(embedding, vectors, metadatas, structured_input)
-        if not relevant_results:
-            return False
-        else:
+        if relevant_results:
             # 개별 기준에 대한 분석
             overall_decision, explanations = analyze_criteria(relevant_results, user_input)
             st.session_state.overall_decision = overall_decision
@@ -313,57 +317,62 @@ def retry_embedding_and_search(department, user_input, vectors, metadatas):
             st.session_state.relevant_results = relevant_results
             st.session_state.full_response = full_response
             st.session_state.results_displayed = True
+            st.session_state.retry_type = None
             return True
+        else:
+            st.warning("재시도 후에도 연관성 높은 항목을 찾지 못했습니다.")
+            return False
     else:
-        st.warning("임베딩 및 검색 재시도 횟수를 초과했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
+        st.warning("임베딩 및 검색 재시도 횟수를 초과했습니다.")
         return False
 
 # 재시도 로직 처리 함수
 def handle_retries(department, user_input):
-    if st.session_state.retry_type == 'score_parsing':
-        new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
-        if new_response:
-            scores = extract_scores(new_response, len(st.session_state.metadatas))
-            if scores:
-                st.subheader("연관성 평가 결과 (재시도 후)")
-                with st.expander("연관성 평가 결과 상세 보기"):
-                    st.write(new_response)
+    max_attempts = st.session_state.max_attempts
+    retry_attempts = 0
 
-                relevant_results = []
-                for idx, doc in enumerate(st.session_state.metadatas, 1):
-                    score = scores.get(idx, None)
-                    if score and score >= 7:
-                        with st.expander(f"항목 {idx} (score: {score})"):
-                            st.write(f"세부인정사항:")
-                            st.write(doc['세부인정사항'])
-                        relevant_results.append(doc)
-                if relevant_results:
-                    # 개별 기준에 대한 분석
-                    overall_decision, explanations = analyze_criteria(relevant_results, user_input)
-                    st.session_state.overall_decision = overall_decision
-                    st.session_state.explanations = explanations
-                    st.session_state.relevant_results = relevant_results
+    while st.session_state.retry_type and retry_attempts < max_attempts:
+        retry_attempts += 1
+        if st.session_state.retry_type == 'score_parsing':
+            new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
+            if new_response:
+                scores = extract_scores(new_response, len(st.session_state.metadatas))
+                if scores:
                     st.session_state.full_response = new_response
-                    st.session_state.results_displayed = True
-                    st.session_state.retry_type = None
-                else:
-                    if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
-                        st.session_state.retry_type = 'score_parsing'
-                        handle_retries(department, user_input)  # 재귀 호출
-                    else:
-                        st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
+                    st.session_state.scores = scores
+
+                    relevant_results = []
+                    for idx, doc in enumerate(st.session_state.metadatas, 1):
+                        score = scores.get(idx, None)
+                        if score and score >= 7:
+                            relevant_results.append(doc)
+                    if relevant_results:
+                        # 개별 기준에 대한 분석
+                        overall_decision, explanations = analyze_criteria(relevant_results, user_input)
+                        st.session_state.overall_decision = overall_decision
+                        st.session_state.explanations = explanations
+                        st.session_state.relevant_results = relevant_results
+                        st.session_state.results_displayed = True
                         st.session_state.retry_type = None
-            else:
-                if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
-                    st.session_state.retry_type = 'score_parsing'
-                    handle_retries(department, user_input)  # 재귀 호출
+                        break  # 재시도 성공
+                    else:
+                        st.warning("재시도 후에도 연관성 높은 항목을 찾지 못했습니다.")
+                        st.session_state.retry_type = None
                 else:
-                    st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
+                    st.warning("재시도 후에도 스코어 추출에 실패했습니다.")
                     st.session_state.retry_type = None
-    elif st.session_state.retry_type == 'embedding_search':
-        retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
-        if not retry_success:
-            st.session_state.retry_type = None
+            else:
+                st.warning("스코어링 GPT 호출에 실패했습니다.")
+                st.session_state.retry_type = None
+
+        elif st.session_state.retry_type == 'embedding_search':
+            retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
+            if retry_success:
+                st.session_state.retry_type = None
+                break  # 재시도 성공
+            else:
+                st.warning("임베딩 및 검색 재시도에 실패했습니다.")
+                st.session_state.retry_type = None
 
 # 검색 결과 및 분석 결과를 출력하는 함수
 def display_results(embedding, vectors, metadatas, structured_input):
@@ -385,6 +394,9 @@ def display_results(embedding, vectors, metadatas, structured_input):
             st.session_state.retry_type = 'score_parsing'
             return [], full_response
         else:
+            st.session_state.full_response = full_response
+            st.session_state.scores = scores
+
             st.subheader("연관성 평가 결과")
             with st.expander("연관성 평가 결과 상세 보기"):
                 st.write(full_response)
@@ -442,7 +454,7 @@ def analyze_criteria(relevant_results, user_input):
     prompt_template = st.secrets["openai"]["prompt_interpretation"]
 
     with st.spinner("개별 기준에 대한 심사 진행중..."):
-        progress_bar = st.progress(0)
+        progress_bar = st.progress(0.0)
         total = len(relevant_results)
         for idx, criteria in enumerate(relevant_results, 1):
             try:
@@ -453,7 +465,7 @@ def analyze_criteria(relevant_results, user_input):
                         {"role": "system", "content": "당신은 의료 문서를 분석하는 보험 전문가입니다."},
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=8192,
+                    max_tokens=8192,  # 적절한 토큰 수로 조정
                     temperature=0.3,
                 )
                 analysis = response.choices[0].message.content.strip()
@@ -515,34 +527,30 @@ def display_chat_interface():
                 with st.chat_message("assistant"):
                     st.markdown(model_response)
 
-
 # 채팅에서 응답을 생성하는 함수
 def generate_chat_response(user_question):
     try:
-        # 이전의 컨텍스트 가져오기
-        user_input = st.session_state.user_input
-        overall_decision = st.session_state.overall_decision
-        explanations = st.session_state.explanations
-
-        # 대화 내역 가져오기
+        # 이전의 컨텍스트 가져오기 (최근 10개 메시지만)
+        recent_conversation = st.session_state.conversation[-10:]
         conversation_history = ""
-        for chat in st.session_state.conversation:
+        for chat in recent_conversation:
             conversation_history += f"사용자: {chat['message']}\n" if chat['role'] == 'user' else f"모델: {chat['message']}\n"
 
-        # explanations에서 문자열 리스트 생성
-        explanations_texts = [explanation['content_after_4'] for explanation in explanations]
+        # explanations에서 최근 10개만 가져오기
+        recent_explanations = st.session_state.explanations[-10:]
+        explanations_texts = [explanation['content_after_4'] for explanation in recent_explanations]
 
         # GPT에게 전달할 프롬프트
         prompt_template = st.secrets["openai"]["prompt_chatting"]
 
         prompt = prompt_template.format(
             conversation_history=conversation_history,
-            user_input=user_input,
-            overall_decision=overall_decision,
+            user_input=st.session_state.user_input,
+            overall_decision=st.session_state.overall_decision,
             explanations='\n'.join(explanations_texts),
             user_question=user_question
         )
-   
+    
         with st.spinner("응답 생성 중..."):
             response = openai.ChatCompletion.create(
                 model='gpt-4o-mini',
@@ -584,21 +592,25 @@ def main():
             st.session_state.explanations = []
             st.session_state.relevant_results = []
             st.session_state.full_response = ""
+            st.session_state.scores = {}
+            st.session_state.retry_type = None  # 재시도 유형 초기화
+
             st.session_state.structured_input, st.session_state.embedding = process_user_input(user_input)
             if not st.session_state.structured_input or not st.session_state.embedding:
                 st.error("사용자 입력 처리에 실패했습니다.")
                 return
 
             # 임베딩 데이터 로드
-            embedded_data = load_data_if_department_selected(department)
-            if not embedded_data:
-                st.error("데이터 로드 실패, 또는 해당 분과의 데이터가 아직 없습니다.")
-                return
+            if not st.session_state.vectors or not st.session_state.metadatas:
+                embedded_data = load_data_if_department_selected(department)
+                if not embedded_data:
+                    st.error("데이터 로드 실패, 또는 해당 분과의 데이터가 아직 없습니다.")
+                    return
 
-            st.session_state.vectors, st.session_state.metadatas = extract_vectors_and_metadata(embedded_data)
-            if not st.session_state.vectors:
-                st.error("임베딩 데이터 추출에 실패했습니다.")
-                return
+                st.session_state.vectors, st.session_state.metadatas = extract_vectors_and_metadata(embedded_data)
+                if not st.session_state.vectors:
+                    st.error("임베딩 데이터 추출에 실패했습니다.")
+                    return
 
             # 검색된 급여기준 및 분석 결과 출력
             relevant_results, full_response = display_results(
@@ -608,10 +620,9 @@ def main():
                 st.session_state.structured_input
             )
 
-            if not relevant_results and st.session_state.embedding_search_attempt < st.session_state.max_attempts:
+            if not relevant_results:
                 st.session_state.retry_type = 'embedding_search'
-                handle_retries(department, user_input)
-            elif relevant_results:
+            else:
                 # 개별 기준에 대한 분석
                 overall_decision, explanations = analyze_criteria(relevant_results, user_input)
                 st.session_state.overall_decision = overall_decision
@@ -619,8 +630,6 @@ def main():
                 st.session_state.relevant_results = relevant_results
                 st.session_state.full_response = full_response
                 st.session_state.results_displayed = True
-            else:
-                st.error("연관된 항목을 찾을 수 없습니다.")
 
     # 3. 재시도 처리
     if st.session_state.retry_type:
@@ -640,7 +649,7 @@ def main():
                 with st.expander(f"항목 {explanation['index']} - 상세 보기"):
                     st.write(explanation['content_after_4'])
 
-        # Sidebar에 채팅 인터페이스 표시
+    # Sidebar에 채팅 인터페이스 표시
         display_chat_interface()
 
 if __name__ == "__main__":
