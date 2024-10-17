@@ -26,11 +26,13 @@ for key, value in session_state_defaults.items():
         st.session_state[key] = value
 
 
-
-
 # OpenAI API 키 설정 (Streamlit secrets 사용)
 openai.api_key = st.secrets["openai"]["openai_api_key"]
 
+# 회사 로고 추가 함수 별도로 분리
+def add_logo():
+    logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
+    st.image(logo_url, width=150)
 
 def check_if_clinical_note(text):
     try:
@@ -374,28 +376,28 @@ def add_to_conversation(role, message):
 
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
-    main_col, chat_col = st.columns([3,1])
+    if st.session_state.chat_started:
+        main_col, chat_col = st.columns([3,1])
+        with chat_col:
+            st.header("AI assistant와 채팅을 시작해보세요.")
+            display_chat_messages()
 
-    with main_col:
-        st.write("판정 결과")
+            # 사용자 입력받는 채팅 입력창
+            if user_question := st.chat_input("질문을 입력하세요"):
+                if user_question.strip() == "":
+                    st.warning("질문을 입력해주세요.")
+                else:
+                    add_to_conversation('user', user_question)
+                    with st.chat_message("user"):
+                        st.markdown(user_question)
 
-    with chat_col:
-        st.header("AI assistant와 채팅을 시작해보세요.")
-        display_chat_messages()
-
-        # 사용자 입력받는 채팅 입력창
-        if user_question := st.chat_input("질문을 입력하세요"):
-            if user_question.strip() == "":
-                st.warning("질문을 입력해주세요.")
-            else:
-                add_to_conversation('user', user_question)
-                with st.chat_message("user"):
-                    st.markdown(user_question)
-
-                model_response = generate_chat_response(user_question)
-                add_to_conversation('assistant', model_response)
-                with st.chat_message("assistant"):
-                    st.markdown(model_response)
+                    model_response = generate_chat_response(user_question)
+                    add_to_conversation('assistant', model_response)
+                    with st.chat_message("assistant"):
+                        st.markdown(model_response)
+    else:
+        if st.button("채팅 기능 활성화"):
+            st.session_state.chat_started = True
 
 
 # 대화 메시지를 표시하는 함수
@@ -443,7 +445,7 @@ def generate_chat_response(user_question):
                     {"role": "system", "content": "당신은 의료보험 분야의 전문가 어시스턴트입니다."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_tokens=1000,
                 temperature=0.7
             )
 
@@ -452,13 +454,13 @@ def generate_chat_response(user_question):
     
     except Exception as e:
         st.error(f"응답 생성 중 오류 발생: {e}")
-        return "죄송합니다. 요청을 처리하는 중 문제가 발생했습니다."
+        st.exception(e)
+        return "죄송합니다. 응답을 생성하는 중 문제가 발생했습니다."
 
 
 
 def main():
-    logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
-    st.image(logo_url, width=100)
+    add_logo()
     st.title("의료비 삭감 판정 어시스트 - beta version.")
 
     # 1. 사용자 정보 및 입력 수집
@@ -512,16 +514,19 @@ def main():
     # 세션 상태에 결과가 저장되어 있으면 출력
     if st.session_state.get('results_displayed', False):
         st.subheader("심사 결과")
-        st.write(st.session_state.overall_decision)
+
+        main_col, chat_col = st.columns([3,1])
+        with main_col:
+            st.write(st.session_state.overall_decision)
 
         # 6. 개별 기준에 대한 분석 결과 표시
-        st.subheader("개별 기준에 대한 심사 결과")
-        for explanation in st.session_state.explanations:
-            with st.expander("개별 분석 보기"):
-                st.write(explanation['content_after_4'])
+            st.subheader("개별 기준에 대한 심사 결과")
+            for explanation in st.session_state.explanations:
+                with st.expander(f"항목 {explanation['index']} - 상세 보기""):
+                    st.write(explanation['content_after_4'])
                 
-
-        display_chat_interface()
+        with chat_col:
+            display_chat_interface()
 
 
 if __name__ == "__main__":
