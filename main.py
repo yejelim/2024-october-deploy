@@ -49,7 +49,7 @@ def check_if_clinical_note(text):
     try:
         prompt = f"다음 텍스트가 임상 노트인지 여부를 판단해주세요:\n\n{text}\n\n이 텍스트는 임상 노트입니까? (예/아니오)"
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "당신은 임상 문서를 판별하는 전문가입니다."},
                 {"role": "user", "content": prompt}
@@ -190,7 +190,7 @@ def structure_user_input(user_input):
         prompt = prompt_template.format(user_input=user_input)
 
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "당신은 의료 기록을 구조화하는 전문가입니다."},
                 {"role": "user", "content": prompt}
@@ -241,7 +241,7 @@ def evaluate_relevance_with_gpt(structured_input, items):
 
         with st.spinner("연관성 점수 평가 중..."):
             response = openai.ChatCompletion.create(
-                model="gpt-4",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "당신은 도움이 되는 어시스턴트입니다."},
                     {"role": "user", "content": prompt}
@@ -449,7 +449,7 @@ def analyze_criteria(relevant_results, user_input):
             try:
                 prompt = prompt_template.format(user_input=user_input, criteria=criteria['세부인정사항'])
                 response = openai.ChatCompletion.create(
-                    model="gpt-4",
+                    model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": "당신은 의료 문서를 분석하는 보험 전문가입니다."},
                         {"role": "user", "content": prompt}
@@ -550,7 +550,7 @@ def generate_chat_response(user_question):
    
         with st.spinner("응답 생성 중..."):
             response = openai.ChatCompletion.create(
-                model='gpt-4',
+                model='gpt-4o-mini',
                 messages=[
                     {"role": "system", "content": "당신은 의료보험 분야의 전문가 어시스턴트입니다."},
                     {"role": "user", "content": prompt}
