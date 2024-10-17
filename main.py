@@ -516,7 +516,7 @@ def main():
         # 4. 검색된 급여기준 및 분석 결과 출력
         relevant_results, full_response = display_results(embedding, vectors, metadatas, structured_input)
         if not relevant_results:
-            st.warning("검색 결과 중 유효한 항목이 없습니다. 임상노트가 제대로 입력되었는지 확인해주세요.")
+            st.warning("현재 검색 결과 중 유효한 항목이 없습니다. 버튼을 다시한번 눌러주세요.")
             return
         
         # 5. 개별 기준에 대한 분석
