@@ -568,7 +568,7 @@ def generate_chat_response(user_question):
 
         # explanations에서 최근 10개만 가져오기
         recent_explanations = st.session_state.explanations[-10:]
-        explanations_texts = [explanation['content_after_4'] for explanation in recent_explanations]
+        explanations_texts = [explanation[:] for explanation in recent_explanations]
 
         # GPT에게 전달할 프롬프트
         prompt_template = st.secrets["openai"]["prompt_chatting"]
