@@ -16,9 +16,20 @@ st.image(logo_url, width=150)
 st.markdown(
     """
     <style>
-    /* Move the sidebar to the right */
-    .css-1d391kg {order: 2;}
-    .css-1lcbmhc {order: 1;}
+    /* Sidebar를 우측으로 이동 */
+    [data-testid="stSidebar"] {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 300px; /* Sidebar의 너비를 조정할 수 있습니다 */
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    /* 메인 컨텐츠가 Sidebar를 덮지 않도록 패딩 추가 */
+    [data-testid="stAppViewContainer"] > .main {
+        padding-right: 320px; /* Sidebar 너비 + 약간의 여유 공간 */
+    }
     </style>
     """,
     unsafe_allow_html=True
