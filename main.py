@@ -8,24 +8,23 @@ import numpy as np
 import re
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 # 세션 상태 변수 초기화
-# 세션 상태 변수 초기화
-if 'is_clinical_note' not in st.session_state:
-    st.session_state.is_clinical_note = False
-if 'conversation' not in st.session_state:
-    st.session_state.conversation = []
-if 'chat_started' not in st.session_state:
-    st.session_state.chat_started = False
-if 'user_input' not in st.session_state:
-    st.session_state.user_input = ''
-if 'overall_decision' not in st.session_state:
-    st.session_state.overall_decision = ''
-if 'explanations' not in st.session_state:
-    st.session_state.explanations = []
-if 'results_displayed' not in st.session_state:
-    st.session_state.results_displayed = False
-if 'chat_input' not in st.session_state:
-    st.session_state.chat_input = ''  # chat_input 기본값 설정
+session_state_defaults = {
+    'is_clinical_note': False,
+    'conversation': [],
+    'chat_started': False,
+    'user_input': '',
+    'overall_decision': '',
+    'explanations': [],
+    'results_displayed': False,
+    'chat_input': '',
+}
+
+for key, value in session_state_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
 
 
 
@@ -375,27 +374,28 @@ def add_to_conversation(role, message):
 
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
-    with st.sidebar:
-        st.header("채팅하기")
+    main_col, chat_col = st.columns([3,1])
 
-    display_chat_messages()
+    with main_col:
+        st.write("판정 결과")
 
-    # st.chat_input을 사용하여 Enter 키로 입력을 받을 수 있습니다.
-    if user_question := st.chat_input("질문을 입력하세요"):
-        if user_question.strip() == "":
-            st.warning("질문을 입력해주세요.")
-        else:
-            # 사용자 메시지 추가 및 표시
-            add_to_conversation('user', user_question)
-            with st.chat_message("user"):
-                st.markdown(user_question)
+    with chat_col:
+        st.header("AI assistant와 채팅을 시작해보세요.")
+        display_chat_messages()
 
-            # 모델 응답 생성 및 표시
-            model_response = generate_chat_response(user_question)
-            add_to_conversation('assistant', model_response)
-            with st.chat_message("assistant"):
-                st.markdown(model_response)
+        # 사용자 입력받는 채팅 입력창
+        if user_question := st.chat_input("질문을 입력하세요"):
+            if user_question.strip() == "":
+                st.warning("질문을 입력해주세요.")
+            else:
+                add_to_conversation('user', user_question)
+                with st.chat_message("user"):
+                    st.markdown(user_question)
 
+                model_response = generate_chat_response(user_question)
+                add_to_conversation('assistant', model_response)
+                with st.chat_message("assistant"):
+                    st.markdown(model_response)
 
 
 # 대화 메시지를 표시하는 함수
@@ -458,6 +458,8 @@ def generate_chat_response(user_question):
 
 def main():
     st.title("의료비 삭감 판정 어시스트 - beta version.")
+    logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
+    st.image(logo_url, width=35)
 
     # 1. 사용자 정보 및 입력 수집
     occupation, other_occupation, department, user_input = collect_user_input()
