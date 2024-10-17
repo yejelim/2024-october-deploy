@@ -12,6 +12,18 @@ st.set_page_config(page_title="의료비 삭감 판정 어시스트 - beta versi
 logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
 st.image(logo_url, width=150)
 
+# Sidebar를 우측에 배치하기 위한 CSS 추가
+st.markdown(
+    """
+    <style>
+    /* Move the sidebar to the right */
+    .css-1d391kg {order: 2;}
+    .css-1lcbmhc {order: 1;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # 세션 상태 변수 초기화
 session_state_defaults = {
     'is_clinical_note': False,
@@ -336,6 +348,8 @@ def analyze_criteria(relevant_results, user_input):
     prompt_template = st.secrets["openai"]["prompt_interpretation"]
 
     with st.spinner("개별 기준에 대한 심사 진행중..."):
+        progress_bar = st.progress(0)
+        total_ = len(relevant_results)
         for idx, criteria in enumerate(relevant_results, 1):
             try:
                 prompt = prompt_template.format(user_input=user_input, criteria=criteria['세부인정사항'])
@@ -364,9 +378,13 @@ def analyze_criteria(relevant_results, user_input):
 
                 if "의료비는 삭감됩니다." in analysis:
                     overall_decision = "삭감될 가능성 높음"
+                
+                progress_bar.progress(idx / total * 100)
             except Exception as e:
                 st.error(f"기준 {idx}에 대한 분석 중 오류 발생: {e}")
-       
+                progress_bar.progress(idx / total * 100)
+
+    progress_bar.empty()
     return overall_decision, explanations
 
 
@@ -377,9 +395,8 @@ def add_to_conversation(role, message):
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
     if st.session_state.chat_started:
-        main_col, chat_col = st.columns([1,1])
-        with chat_col:
-            st.header("AI assistant와 채팅을 시작해보세요.")
+        with st.sidebar:
+            st.header("채팅 시작하기")
             display_chat_messages()
 
             # 사용자 입력받는 채팅 입력창
@@ -396,8 +413,9 @@ def display_chat_interface():
                     with st.chat_message("assistant"):
                         st.markdown(model_response)
     else:
-        if st.button("채팅 기능 활성화"):
-            st.session_state.chat_started = True
+        with st.sidebar:
+            if st.button("채팅 기능 활성화"):
+                st.session_state.chat_started = True
 
 
 # 대화 메시지를 표시하는 함수
@@ -470,6 +488,7 @@ def main():
     if st.button("삭감 여부 확인"):
         st.session_state.conversation = []
         st.session_state.results_displayed = False
+        st.session_state.chat_started = False
 
         # 사용자 정보가 입력 되어야지만 삭감판정 가능
         if len(user_input.strip()) < 10:
@@ -512,18 +531,14 @@ def main():
     if st.session_state.get('results_displayed', False):
         st.subheader("심사 결과")
 
-        main_col, chat_col = st.columns([1,1])
-        with main_col:
+        with st.container():
             st.write(st.session_state.overall_decision)
-
-        # 6. 개별 기준에 대한 분석 결과 표시
             st.subheader("개별 기준에 대한 심사 결과")
             for explanation in st.session_state.explanations:
                 with st.expander(f"항목 {explanation['index']} - 상세 보기"):
                     st.write(explanation['content_after_4'])
-                
-        with chat_col:
-            display_chat_interface()
+
+        display_chat_interface()
 
 
 if __name__ == "__main__":
