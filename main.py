@@ -559,7 +559,6 @@ def display_chat_interface():
 
 # 채팅에서 응답을 생성하는 함수
 def generate_chat_response(user_question):
-    display_results_and_analysis()
     try:
         # 이전의 컨텍스트 가져오기 (최근 10개 메시지만)
         recent_conversation = st.session_state.conversation[-10:]
