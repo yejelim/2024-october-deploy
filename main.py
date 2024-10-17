@@ -25,6 +25,10 @@ def initialize_session_state():
         'score_parsing_attempt': 0,      # 스코어 추출 재시도 횟수
         'embedding_search_attempt': 0,   # 임베딩 및 검색 재시도 횟수
         'max_attempts': 3,               # 최대 재시도 횟수
+        'retry_type': None,              # 'score_parsing' 또는 'embedding_search'
+        'vectors': [],
+        'metadatas': [],
+        'full_response': ''
     }
     for key, value in session_state_defaults.items():
         if key not in st.session_state:
@@ -315,6 +319,53 @@ def retry_embedding_and_search(department, user_input, vectors, metadatas):
         st.warning("임베딩 및 검색 재시도 횟수를 초과했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
         return False
 
+# 재시도 로직 처리 함수
+def handle_retries(department, user_input):
+    if st.session_state.retry_type == 'score_parsing':
+        new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
+        if new_response:
+            scores = extract_scores(new_response, len(st.session_state.metadatas))
+            if scores:
+                st.subheader("연관성 평가 결과 (재시도 후)")
+                with st.expander("연관성 평가 결과 상세 보기"):
+                    st.write(new_response)
+
+                relevant_results = []
+                for idx, doc in enumerate(st.session_state.metadatas, 1):
+                    score = scores.get(idx, None)
+                    if score and score >= 7:
+                        with st.expander(f"항목 {idx} (score: {score})"):
+                            st.write(f"세부인정사항:")
+                            st.write(doc['세부인정사항'])
+                        relevant_results.append(doc)
+                if relevant_results:
+                    # 개별 기준에 대한 분석
+                    overall_decision, explanations = analyze_criteria(relevant_results, user_input)
+                    st.session_state.overall_decision = overall_decision
+                    st.session_state.explanations = explanations
+                    st.session_state.relevant_results = relevant_results
+                    st.session_state.full_response = new_response
+                    st.session_state.results_displayed = True
+                    st.session_state.retry_type = None
+                else:
+                    if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
+                        st.session_state.retry_type = 'score_parsing'
+                        handle_retries(department, user_input)  # 재귀 호출
+                    else:
+                        st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
+                        st.session_state.retry_type = None
+            else:
+                if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
+                    st.session_state.retry_type = 'score_parsing'
+                    handle_retries(department, user_input)  # 재귀 호출
+                else:
+                    st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
+                    st.session_state.retry_type = None
+    elif st.session_state.retry_type == 'embedding_search':
+        retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
+        if not retry_success:
+            st.session_state.retry_type = None
+
 # 검색 결과 및 분석 결과를 출력하는 함수
 def display_results(embedding, vectors, metadatas, structured_input):
     top_results = find_top_n_similar(embedding, vectors, metadatas)
@@ -332,6 +383,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
         scores = extract_scores(full_response, len(items))
         if not scores:
             st.warning("스코어 추출에 실패했습니다. 스코어링 GPT를 다시 호출합니다.")
+            st.session_state.retry_type = 'score_parsing'
             return [], full_response
         else:
             st.subheader("연관성 평가 결과")
@@ -349,6 +401,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
             
             if not relevant_results:
                 st.warning("연관성이 떨어지는 결과가 나왔습니다. 임베딩 및 검색 과정을 다시 수행합니다.")
+                st.session_state.retry_type = 'embedding_search'
                 return [], full_response
             else:
                 return relevant_results, full_response
@@ -514,53 +567,6 @@ def generate_chat_response(user_question):
         st.exception(e)  # 예외의 전체 스택 트레이스 표시
         return "죄송합니다. 요청을 처리하는 중 문제가 발생했습니다."
 
-# 재시도 로직 처리 함수
-def handle_retries(department, user_input):
-    if st.session_state.retry_type == 'score_parsing':
-        new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
-        if new_response:
-            scores = extract_scores(new_response, len(st.session_state.metadatas))
-            if scores:
-                st.subheader("연관성 평가 결과 (재시도 후)")
-                with st.expander("연관성 평가 결과 상세 보기"):
-                    st.write(new_response)
-
-                relevant_results = []
-                for idx, doc in enumerate(st.session_state.metadatas, 1):
-                    score = scores.get(idx, None)
-                    if score and score >= 7:
-                        with st.expander(f"항목 {idx} (score: {score})"):
-                            st.write(f"세부인정사항:")
-                            st.write(doc['세부인정사항'])
-                        relevant_results.append(doc)
-                if relevant_results:
-                    # 개별 기준에 대한 분석
-                    overall_decision, explanations = analyze_criteria(relevant_results, user_input)
-                    st.session_state.overall_decision = overall_decision
-                    st.session_state.explanations = explanations
-                    st.session_state.relevant_results = relevant_results
-                    st.session_state.full_response = new_response
-                    st.session_state.results_displayed = True
-                    st.session_state.retry_type = None
-                else:
-                    if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
-                        st.session_state.retry_type = 'score_parsing'
-                        handle_retries(department, user_input)  # 재귀 호출
-                    else:
-                        st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
-                        st.session_state.retry_type = None
-            else:
-                if st.session_state.score_parsing_attempt < st.session_state.max_attempts:
-                    st.session_state.retry_type = 'score_parsing'
-                    handle_retries(department, user_input)  # 재귀 호출
-                else:
-                    st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
-                    st.session_state.retry_type = None
-    elif st.session_state.retry_type == 'embedding_search':
-        retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
-        if not retry_success:
-            st.session_state.retry_type = None
-
 # 메인 함수
 def main():
     add_logo()
@@ -642,13 +648,6 @@ def main():
 
         # Sidebar에 채팅 인터페이스 표시
         display_chat_interface()
-
-# 재시도 케이스: 연관된 항목이 없는 경우 자동 재시도
-def handle_no_relevant_items(department, user_input):
-    retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
-    if retry_success:
-        return st.session_state.relevant_results, st.session_state.full_response
-    return None, None
 
 if __name__ == "__main__":
     main()
