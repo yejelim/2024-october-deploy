@@ -419,6 +419,19 @@ def display_results(embedding, vectors, metadatas, structured_input):
         st.error("서버에서 응답을 받지 못했습니다.")
         return None, None
 
+
+def extract_text_between_numbers(structured_input):
+    import re
+    # 정규표현식을 사용하여 "2."와 "6." 사이의 텍스트를 추출
+    pattern = r"2\.(.*?)6\."
+    match = re.search(pattern, structured_input, re.DOTALL)
+    if match:
+        extracted_text = match.group(1).strip()
+        return extracted_text
+    else:
+        return None
+
+
 # 사용자 입력 처리 및 임베딩 생성
 def process_user_input(user_input):
     try:
@@ -431,6 +444,12 @@ def process_user_input(user_input):
         # st.success("입력 처리 완료")
         with st.expander("구조화된 입력 보기"):
             st.write(structured_input)
+
+        # "2."부터 "6." 이전까지의 텍스트를 추출
+        extracted_text = extract_text_between_numbers(structured_input)
+        if not extracted_text:
+            st.error("구조화된 입력에서 필요한 부분을 추출하지 못했습니다.")
+            return None, None
 
         with st.spinner("임베딩 생성 중..."):
             embedding = get_embedding_from_openai(structured_input)
