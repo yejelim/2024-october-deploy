@@ -17,7 +17,6 @@ def initialize_session_state():
     session_state_defaults = {
         'is_clinical_note': False,
         'conversation': [],
-        'chat_started': False,
         'user_input': '',
         'overall_decision': '',
         'explanations': [],
@@ -498,28 +497,24 @@ def display_chat_messages():
 
 # 채팅 인터페이스를 Sidebar에 표시하는 함수
 def display_chat_interface():
-    if st.session_state.chat_started:
-        with st.sidebar:
-            st.header("AI Assistant와 채팅을 시작해보세요.")
-            display_chat_messages()
+    with st.sidebar:
+        st.header("AI Assistant와 채팅을 시작해보세요.")
+        display_chat_messages()
 
-            # 사용자 입력받는 채팅 입력창
-            if user_question := st.chat_input("질문을 입력하세요"):
-                if user_question.strip() == "":
-                    st.warning("질문을 입력해주세요.")
-                else:
-                    add_to_conversation('user', user_question)
-                    with st.chat_message("user"):
-                        st.markdown(user_question)
+        # 사용자 입력받는 채팅 입력창
+        if user_question := st.chat_input("질문을 입력하세요"):
+            if user_question.strip() == "":
+                st.warning("질문을 입력해주세요.")
+            else:
+                add_to_conversation('user', user_question)
+                with st.chat_message("user"):
+                    st.markdown(user_question)
 
-                    model_response = generate_chat_response(user_question)
-                    add_to_conversation('assistant', model_response)
-                    with st.chat_message("assistant"):
-                        st.markdown(model_response)
-    else:
-        with st.sidebar:
-            if st.button("채팅 기능 활성화"):
-                st.session_state.chat_started = True
+                model_response = generate_chat_response(user_question)
+                add_to_conversation('assistant', model_response)
+                with st.chat_message("assistant"):
+                    st.markdown(model_response)
+
 
 # 채팅에서 응답을 생성하는 함수
 def generate_chat_response(user_question):
@@ -583,7 +578,6 @@ def main():
         else:
             st.session_state.conversation = []
             st.session_state.results_displayed = False
-            st.session_state.chat_started = False  # 판정 결과 재확인 시 채팅 초기화
             st.session_state.score_parsing_attempt = 0
             st.session_state.embedding_search_attempt = 0
             st.session_state.overall_decision = ""
