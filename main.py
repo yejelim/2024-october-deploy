@@ -474,10 +474,10 @@ def analyze_criteria(relevant_results, user_input):
                 if "의료비는 삭감됩니다." in analysis:
                     overall_decision = "삭감될 가능성 높음"
                 
-                progress_bar.progress(idx / total * 100)
+                progress_bar.progress(idx / total)
             except Exception as e:
                 st.error(f"기준 {idx}에 대한 분석 중 오류 발생: {e}")
-                progress_bar.progress(idx / total * 100)
+                progress_bar.progress(idx / total)
     
     progress_bar.empty()
     return overall_decision, explanations
