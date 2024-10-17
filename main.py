@@ -458,7 +458,7 @@ def generate_chat_response(user_question):
 
 def main():
     logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
-    st.image(logo_url, width=60)
+    st.image(logo_url, width=100)
     st.title("의료비 삭감 판정 어시스트 - beta version.")
 
     # 1. 사용자 정보 및 입력 수집
