@@ -8,9 +8,9 @@ import numpy as np
 import re
 from sklearn.metrics.pairwise import cosine_similarity
 
+st.set_page_config(page_title="의료비 삭감 판정 어시스트 - beta version.", layout="wide")
 logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"
 st.image(logo_url, width=150)
-st.set_page_config(page_title="의료비 삭감 판정 어시스트 - beta version.", layout="wide")
 
 # 세션 상태 변수 초기화
 session_state_defaults = {
