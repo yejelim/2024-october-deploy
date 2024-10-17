@@ -411,7 +411,6 @@ def display_results(embedding, vectors, metadatas, structured_input):
                     relevant_results.append(doc)
             
             if not relevant_results:
-                st.warning("연관성이 떨어지는 결과가 나왔습니다. 임베딩 및 검색 과정을 다시 수행합니다.")
                 st.session_state.retry_type = 'embedding_search'
                 return [], full_response
             else:
@@ -429,7 +428,7 @@ def process_user_input(user_input):
                 st.error("입력 텍스트 분석에 실패했습니다.")
                 return None, None
 
-        st.success("입력 처리 완료!")
+        st.success("입력 처리 완료")
         with st.expander("구조화된 입력 보기"):
             st.write(structured_input)
 
@@ -439,7 +438,7 @@ def process_user_input(user_input):
                 st.error("임베딩 생성에 문제가 있습니다.")
                 return None, None
         
-        st.success("임베딩 생성 완료!")
+        # st.success("임베딩 생성 완료!")
         return structured_input, embedding
     except Exception as e:
         st.error(f"사용자 입력 처리 중 오류 발생: {e}")
