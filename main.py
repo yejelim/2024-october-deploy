@@ -522,7 +522,7 @@ def main():
         # 6. 개별 기준에 대한 분석 결과 표시
             st.subheader("개별 기준에 대한 심사 결과")
             for explanation in st.session_state.explanations:
-                with st.expander(f"항목 {explanation['index']} - 상세 보기""):
+                with st.expander(f"항목 {explanation['index']} - 상세 보기"):
                     st.write(explanation['content_after_4'])
                 
         with chat_col:
