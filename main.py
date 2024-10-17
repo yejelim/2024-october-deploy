@@ -493,6 +493,18 @@ def analyze_criteria(relevant_results, user_input):
     progress_bar.empty()
     return overall_decision, explanations
 
+def display_results_and_analysis():
+    if st.session_state.get('results_displayed', False):
+        st.subheader("심사 결과")
+
+        with st.container():
+            st.write(st.session_state.overall_decision)
+
+            st.subheader("개별 기준에 대한 심사 결과")
+            for explanation in st.session_state.explanations:
+                with st.expander("상세 보기"):
+                    st.write(explanation['content_after_4'])
+
 # 채팅 기능 추가: 이전 내용들을 대화 내역에 추가하는 함수
 def add_to_conversation(role, message):
     st.session_state.conversation.append({"role": role, "message": message})
@@ -636,21 +648,10 @@ def main():
         handle_retries(department, user_input)
 
     # 4. 결과 표시
-    if st.session_state.get('results_displayed', False):
-        # 판정 결과 표시
-        st.subheader("심사 결과")
-
-        with st.container():
-            st.write(st.session_state.overall_decision)
-
-            # 개별 기준에 대한 분석 결과 표시
-            st.subheader("개별 기준에 대한 심사 결과")
-            for explanation in st.session_state.explanations:
-                with st.expander(f"항목 {explanation['index']} - 상세 보기"):
-                    st.write(explanation['content_after_4'])
+    display_results_and_analysis()
 
     # Sidebar에 채팅 인터페이스 표시
-        display_chat_interface()
+    display_chat_interface()
 
 if __name__ == "__main__":
     main()
