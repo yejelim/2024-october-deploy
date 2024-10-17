@@ -377,7 +377,7 @@ def add_to_conversation(role, message):
 # 채팅 인터페이스를 표시하는 함수
 def display_chat_interface():
     if st.session_state.chat_started:
-        main_col, chat_col = st.columns([3,1])
+        main_col, chat_col = st.columns([1,1])
         with chat_col:
             st.header("AI assistant와 채팅을 시작해보세요.")
             display_chat_messages()
@@ -512,7 +512,7 @@ def main():
     if st.session_state.get('results_displayed', False):
         st.subheader("심사 결과")
 
-        main_col, chat_col = st.columns([3,1])
+        main_col, chat_col = st.columns([1,1])
         with main_col:
             st.write(st.session_state.overall_decision)
 
