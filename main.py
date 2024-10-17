@@ -428,7 +428,7 @@ def process_user_input(user_input):
                 st.error("입력 텍스트 분석에 실패했습니다.")
                 return None, None
 
-        st.success("입력 처리 완료")
+        # st.success("입력 처리 완료")
         with st.expander("구조화된 입력 보기"):
             st.write(structured_input)
 
