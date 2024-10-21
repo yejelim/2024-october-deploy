@@ -711,7 +711,7 @@ def feedback_section():
         st.markdown('<div class="feedback-box">', unsafe_allow_html=True)
 
         # 작고 부담 없는 피드백 섹션
-        st.markdown('<p class="custom-subheader">개발자에게 피드백 보내기</p>', unsafe_allow_html=True)
+        st.markdown('<p class="feedback-header">개발자에게 피드백 보내기</p>', unsafe_allow_html=True)
 
         feedback_text = st.text_input("피드백을 입력해주세요", key="feedback_text")
 
@@ -724,7 +724,7 @@ def feedback_section():
 
         # 박스 끝
         st.markdown('</div>', unsafe_allow_html=True)
-        
+
 
 # 메인 함수
 def main():
