@@ -691,12 +691,24 @@ def feedback_section():
         # HTML과 CSS를 이용해 서브헤더 스타일 조정
         st.markdown("""
         <style>
-        .custom-subheader {
-            font-size: 16px;
+        .feedback-box {
+            background-color: #f0f0f5;
+            border: 2px solid #4CAF50;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .feedback-header {
+            font-size: 18px;
             color: #4CAF50;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
         </style>
         """, unsafe_allow_html=True)
+
+        # 박스 안에 피드백 섹션 추가
+        st.markdown('<div class="feedback-box">', unsafe_allow_html=True)
 
         # 작고 부담 없는 피드백 섹션
         st.markdown('<p class="custom-subheader">개발자에게 피드백 보내기</p>', unsafe_allow_html=True)
@@ -709,6 +721,10 @@ def feedback_section():
             else:
                 save_feedback_to_s3()
                 st.success("피드백이 전송되었습니다. 감사합니다!")
+
+        # 박스 끝
+        st.markdown('</div>', unsafe_allow_html=True)
+        
 
 # 메인 함수
 def main():
