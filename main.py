@@ -638,7 +638,7 @@ def generate_chat_response(user_question):
                     {"role": "system", "content": "당신은 의료보험 분야의 전문가 어시스턴트입니다."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_tokens=2000,
                 temperature=0.7
             )
 
@@ -680,15 +680,29 @@ def save_feedback_to_s3():
     
     try:
         s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=feedback_json)
-        st.success("피드백이 성공적으로 저장되었습니다.")
+        # st.success("피드백이 성공적으로 저장되었습니다.")
     except Exception as e:
         st.error(f"피드백 저장 중 오류 발생: {e}")
 
 
 # 피드백 입력창 추가
 def feedback_section():
-    st.subheader("개발자에게 피드백 보내기")
-    feedback_text = st.text_area("피드백을 입력해주세요", key="feedback_text")
+     # HTML과 CSS를 이용해 서브헤더 스타일 조정
+    st.markdown("""
+    <style>
+    .custom-subheader {
+        font-size: 16px;
+        color: #4CAF50;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 작고 부담 없는 피드백 섹션
+    st.markdown('<p class="custom-subheader">개발자에게 피드백 보내기</p>', unsafe_allow_html=True)
+
+    with st.expander("피드백 입력창 열기"):
+        feedback_text = st.text_area("피드백을 입력해주세요", key="feedback_text")
+
     if st.button("피드백 전송!"):
         if feedback_text.strip() == "":
             st.warning("피드백을 입력해주세요.")
