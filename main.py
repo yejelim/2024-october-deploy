@@ -5,6 +5,8 @@ import json
 import numpy as np
 import re
 from sklearn.metrics.pairwise import cosine_similarity
+import uuid
+from datetime import datetime
 
 # 페이지 설정 (가장 상단에 위치해야 함)
 st.set_page_config(
@@ -28,7 +30,8 @@ def initialize_session_state():
         'vectors': [],
         'metadatas': [],
         'full_response': '',
-        'scores': {}
+        'scores': {},
+        'retry_attempts': 0
     }
     for key, value in session_state_defaults.items():
         if key not in st.session_state:
@@ -62,6 +65,37 @@ def check_if_clinical_note(text):
     except Exception as e:
         st.error(f"임상 노트 판별 중 오류 발생: {e}")
         return False
+
+
+# 사용자 로그를 수집하는 함수
+def save_user_log_to_s3():
+    user_log_data = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "session_id": str(uuid.uuid4()),
+        "occupation": st.session_state.get("occupation", ""),
+        "department": st.session_state.get("department", ""),
+        "structured_input": st.session_state.get("structured_input", ""),
+        "errors": st.session_state.get("errors", [])
+    }
+    
+    st.session_state['user_log_data'] = user_log_data
+    user_log_json = json.dumps(user_log_data, ensure_ascii=False)
+
+    bucket_name = "medinsurance-assist-beta-user-log"
+    file_name = f"user_logs/{user_log_data['timestamp']}_{user_log_data['session_id']}.json"
+
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=st.secrets["aws"]["access_key"],
+        aws_secret_access_key=st.secrets["aws"]["secret_key"],
+        region_name='ap-northeast-2'
+    )
+
+    try:
+        s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=user_log_json)
+        # 로그 저장 성공 시 별도의 메시지를 표시하지 않아도 됩니다.
+    except Exception as e:
+        st.error(f"로그 수집 중 오류 발생: {e}")
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():
@@ -97,6 +131,22 @@ def collect_user_input():
                 "대장항문외과 (Colorectal Surgery)"
             ]
         )
+
+    # 세션 상태에 사용자 정보 저장
+    st.session_state['occupation'] = occupation
+    st.session_state['other_occupation'] = other_occupation
+    st.session_state['department'] = department
+
+    agree_to_collect = st.checkbox(
+        "사용자 정보를 수집하는 것에 동의합니다. 사용자의 텍스트 입력은 개인정보 보호를 위해 수집되지 않으며, 수집된 정보는 일정 기간 후 파기됩니다.",
+        key="agree_to_collect"
+    )
+
+    # '삭감 여부 확인' 버튼을 체크박스 동의 여부에 따라 활성화/비활성화
+    if agree_to_collect:
+        st.session_state['button_disabled'] = False
+    else:
+        st.session_state['button_disabled'] = True
 
     return occupation, other_occupation, department, user_input
 
@@ -328,51 +378,49 @@ def retry_embedding_and_search(department, user_input, vectors, metadatas):
 
 # 재시도 로직 처리 함수
 def handle_retries(department, user_input):
-    max_attempts = st.session_state.max_attempts
-    retry_attempts = 0
+    if st.session_state.retry_attempts >= st.session_state.max_attempts:
+        st.warning("죄송합니다. 응담 과정에서 문제가 발생했습니다. 다시 시도하려면 '삭감 여부 확인' 버튼을 한 번 더 눌러주세요.")
+        st.session_state.retry_type = None
+        return
 
-    while st.session_state.retry_type and retry_attempts < max_attempts:
-        retry_attempts += 1
-        if st.session_state.retry_type == 'score_parsing':
-            new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
-            if new_response:
-                scores = extract_scores(new_response, len(st.session_state.metadatas))
-                if scores:
-                    st.session_state.full_response = new_response
-                    st.session_state.scores = scores
+    st.session_state.retry_attempts += 1  # 재시도 횟수 증가
 
-                    relevant_results = []
-                    for idx, doc in enumerate(st.session_state.metadatas, 1):
-                        score = scores.get(idx, None)
-                        if score and score >= 7:
-                            relevant_results.append(doc)
-                    if relevant_results:
-                        # 개별 기준에 대한 분석
-                        overall_decision, explanations = analyze_criteria(relevant_results, user_input)
-                        st.session_state.overall_decision = overall_decision
-                        st.session_state.explanations = explanations
-                        st.session_state.relevant_results = relevant_results
-                        st.session_state.results_displayed = True
-                        st.session_state.retry_type = None
-                        break  # 재시도 성공
-                    else:
-                        st.warning("재시도 후에도 연관성 높은 항목을 찾지 못했습니다.")
-                        st.session_state.retry_type = None
-                else:
-                    st.warning("재시도 후에도 스코어 추출에 실패했습니다.")
+    if st.session_state.retry_type == 'score_parsing':
+        new_response = retry_scoring_gpt(st.session_state.structured_input, st.session_state.metadatas)
+        if new_response:
+            scores = extract_scores(new_response, len(st.session_state.metadatas))
+            if scores:
+                st.session_state.full_response = new_response
+                st.session_state.scores = scores
+
+                relevant_results = []
+                for idx, doc in enumerate(st.session_state.metadatas, 1):
+                    score = scores.get(idx, None)
+                    if score and score >= 7:
+                        relevant_results.append(doc)
+                if relevant_results:
+                    # 개별 기준에 대한 분석
+                    overall_decision, explanations = analyze_criteria(relevant_results, user_input)
+                    st.session_state.overall_decision = overall_decision
+                    st.session_state.explanations = explanations
+                    st.session_state.relevant_results = relevant_results
+                    st.session_state.results_displayed = True
                     st.session_state.retry_type = None
-            else:
-                st.warning("스코어링 GPT 호출에 실패했습니다.")
-                st.session_state.retry_type = None
+                    return
+            # 스코어 추출 실패 또는 유의미한 결과 없음
+            handle_retries(department, user_input)
+        else:
+            # GPT 호출 실패
+            handle_retries(department, user_input)
 
-        elif st.session_state.retry_type == 'embedding_search':
-            retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
-            if retry_success:
-                st.session_state.retry_type = None
-                break  # 재시도 성공
-            else:
-                st.warning("임베딩 및 검색 재시도에 실패했습니다.")
-                st.session_state.retry_type = None
+    elif st.session_state.retry_type == 'embedding_search':
+        retry_success = retry_embedding_and_search(department, user_input, st.session_state.vectors, st.session_state.metadatas)
+        if retry_success:
+            st.session_state.retry_type = None
+            return
+        else:
+            handle_retries(department, user_input)
+
 
 # 검색 결과 및 분석 결과를 출력하는 함수
 def display_results(embedding, vectors, metadatas, structured_input):
@@ -416,7 +464,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
             else:
                 return relevant_results, full_response
     else:
-        st.error("서버에서 응답을 받지 못했습니다.")
+        st.error("죄송합니다. 일시적인 문제로 결과를 가져올 수 없습니다.")
         return None, None
 
 
@@ -452,16 +500,18 @@ def process_user_input(user_input):
             return None, None
 
         with st.spinner("임베딩 생성 중..."):
-            embedding = get_embedding_from_openai(structured_input)
+            embedding = get_embedding_from_openai(extracted_text)
             if not embedding:
-                st.error("임베딩 생성에 문제가 있습니다.")
+                st.error("죄송합니다. 입력한 내용을 처리하는 중 문제가 발생했습니다.")
                 return None, None
         
         # st.success("임베딩 생성 완료!")
         return structured_input, embedding
     except Exception as e:
-        st.error(f"사용자 입력 처리 중 오류 발생: {e}")
+        error_message = f"사용자 입력 처리 중 오류 발생: {e}"
+        st.error(error_message)
         st.exception(e)
+        st.session_state.setdefault('errors', []).append(error_message)
         return None, None
 
 # 유효 기준에 대한 세부적인 분석과 심사
@@ -600,6 +650,52 @@ def generate_chat_response(user_question):
         st.exception(e)  # 예외의 전체 스택 트레이스 표시
         return "죄송합니다. 요청을 처리하는 중 문제가 발생했습니다."
 
+
+# 피드백 저장 함수
+def save_feedback_to_s3():
+    
+    # 세션 상태에서 기존의 사용자 로그 데이터를 가져옴
+    user_log_data = st.session_state.get('user_log_data', {})
+    if not user_log_data:
+        st.error("사용자 로그 데이터가 없습니다.")
+        return
+    
+    # 피드백 추가
+    user_log_data['feedback'] = st.session_state.get("feedback_text", "")
+    
+    # JSON 형식으로 변환
+    feedback_json = json.dumps(user_log_data, ensure_ascii=False)
+    
+    # S3 버킷 정보 설정
+    bucket_name = "medinsurance-assist-beta-user-log"
+    file_name = f"user_logs/{user_log_data['timestamp']}_{user_log_data['session_id']}.json"
+    
+    # S3 클라이언트 생성
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=st.secrets["aws"]["access_key"],
+        aws_secret_access_key=st.secrets["aws"]["secret_key"],
+        region_name='ap-northeast-2'
+    )
+    
+    try:
+        s3_client.put_object(Bucket=bucket_name, Key=file_name, Body=feedback_json)
+        st.success("피드백이 성공적으로 저장되었습니다.")
+    except Exception as e:
+        st.error(f"피드백 저장 중 오류 발생: {e}")
+
+
+# 피드백 입력창 추가
+def feedback_section():
+    st.subheader("개발자에게 피드백 보내기")
+    feedback_text = st.text_area("피드백을 입력해주세요", key="feedback_text")
+    if st.button("피드백 전송!"):
+        if feedback_text.strip() == "":
+            st.warning("피드백을 입력해주세요.")
+        else:
+            save_feedback_to_s3()
+            st.success("피드백이 전송되었습니다. 감사합니다!")
+
 # 메인 함수
 def main():
     add_logo()
@@ -609,12 +705,15 @@ def main():
     occupation, other_occupation, department, user_input = collect_user_input()
 
     # 2. '삭감 여부 확인' 버튼 클릭 시 초기화 및 재시도 시작
-    if st.button("삭감 여부 확인"):
-        if not st.session_state.is_clinical_note:
+    if st.button("삭감 여부 확인", disabled=st.session_state.get('button_disabled', True)):
+        if not st.session_state.get('agree_to_collect', False):
+            st.warning("사용자 정보 수집에 동의해야 합니다.")
+        elif not st.session_state.is_clinical_note:
             st.warning("유효한 임상노트를 입력해주세요.")
         elif not department:
             st.warning("분과를 선택해주세요.")
         else:
+            save_user_log_to_s3()
             st.session_state.conversation = []
             st.session_state.results_displayed = False
             st.session_state.score_parsing_attempt = 0
@@ -625,10 +724,10 @@ def main():
             st.session_state.full_response = ""
             st.session_state.scores = {}
             st.session_state.retry_type = None  # 재시도 유형 초기화
+            st.session_state.retry_attempts = 0
 
             st.session_state.structured_input, st.session_state.embedding = process_user_input(user_input)
             if not st.session_state.structured_input or not st.session_state.embedding:
-                st.error("사용자 입력 처리에 실패했습니다.")
                 return
 
             # 임베딩 데이터 로드
@@ -653,6 +752,7 @@ def main():
 
             if not relevant_results:
                 st.session_state.retry_type = 'embedding_search'
+                handle_retries(department, user_input)
             else:
                 # 개별 기준에 대한 분석
                 overall_decision, explanations = analyze_criteria(relevant_results, user_input)
@@ -671,6 +771,8 @@ def main():
 
     # Sidebar에 채팅 인터페이스 표시
     display_chat_interface()
+
+    feedback_section()
 
 if __name__ == "__main__":
     main()
