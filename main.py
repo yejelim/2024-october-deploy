@@ -65,7 +65,7 @@ def check_if_clinical_note(text):
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():
-    user_input = st.text_area("임상노트를 입력하세요:", height=500, placehorder="SOAP 등의 임상기록 및 치료 방법 (약물,시술,수술) 등을 입력해주세요.")
+    user_input = st.text_area("임상노트를 입력하세요:", height=500, placeholder="SOAP 등의 임상기록 및 치료 방법 (약물,시술,수술) 등을 입력해주세요.")
     if user_input:
         with st.spinner("임상 노트 여부 확인 중..."):
             is_clinical_note = check_if_clinical_note(user_input)
