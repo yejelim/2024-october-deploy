@@ -701,8 +701,7 @@ def feedback_section():
         # 작고 부담 없는 피드백 섹션
         st.markdown('<p class="custom-subheader">개발자에게 피드백 보내기</p>', unsafe_allow_html=True)
 
-        with st.expander("피드백 입력창 열기"):
-            feedback_text = st.text_area("피드백을 입력해주세요", key="feedback_text")
+        feedback_text = st.text_input("피드백을 입력해주세요", key="feedback_text")
 
         if st.button("피드백 전송!"):
             if feedback_text.strip() == "":
