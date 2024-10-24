@@ -735,13 +735,15 @@ def feedback_section():
                 save_feedback_to_s3()
                 st.success("피드백이 전송되었습니다. 감사합니다!")
 
+
+# 업그레이드된 임상노트를 생성하는 함수
 def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
     try:
         prompt_template = st.secrets["openai"]["prompt_upgrade_note"]
 
         # explanations에서 필요한 내용을 추출하여 explanations_text 생성
         explanations_text = "\n\n".join([
-            f"항목 {explanation['index']} 분석:\n{explanation['content_after_4']}"
+            f"\n{explanation.get('content_after_4', '')}"
             for explanation in explanations
         ])
 
