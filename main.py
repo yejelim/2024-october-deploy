@@ -739,12 +739,16 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
     try:
         prompt_template = st.secrets["openai"]["prompt_upgrade_note"]
 
+        # explanations에서 필요한 내용을 추출하여 explanations_text 생성
+        explanations_text = "\n\n".join([
+            f"항목 {explanation['index']} 분석:\n{explanation['content_after_4']}"
+            for explanation in explanations
+        ])
+
         # 삭감 사유 또는 추가 개선 사항을 추출
         if overall_decision == "삭감될 가능성 높음":
             # 삭감 사유를 explanations에서 추출
-            reasons = "\n".join([explanation['content_after_4'] for explanation in explanations])
-            guidance = f"다음 삭감 사유를 고려하여 임상노트를 개선하세요. 보존적 치료가 앞서 시행되었음을 강조하세요. :\n{reasons}"
-        else:
+            guidance = f"다음 삭감 사유를 고려하여 임상노트를 개선하세요:\n{explanations_text}"        else:
             # 추가적인 개선 사항 제안
             guidance = "임상노트를 더욱 완벽하게 만들기 위해 추가할 수 있는 내용을 추가하세요. 보존적 치료가 앞서 시행되었음을 강조하세요."
 
@@ -752,7 +756,7 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
             overall_decision=overall_decision,
             guidance=guidance,
             user_input=user_input,
-            explanations=explanations
+            explanations_text=explanations_text
         )
 
         with st.spinner("업그레이드된 임상노트 생성 중..."):
