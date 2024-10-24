@@ -563,15 +563,38 @@ def analyze_criteria(relevant_results, user_input):
 
 def display_results_and_analysis():
     if st.session_state.get('results_displayed', False):
+        # 기존 판정 결과 표시
         st.subheader("심사 결과")
+        st.write(st.session_state.overall_decision)
 
-        with st.container():
-            st.write(st.session_state.overall_decision)
+        # 개별 기준에 대한 심사 결과 표시
+        st.subheader("개별 기준에 대한 심사 결과")
+        for explanation in st.session_state.explanations:
+            with st.expander(f"항목 {explanation['index']} - 상세 보기"):
+                st.write(explanation['content_after_4'])
 
-            st.subheader("개별 기준에 대한 심사 결과")
-            for explanation in st.session_state.explanations:
-                with st.expander("상세 보기"):
-                    st.write(explanation['content_after_4'])
+        # 업그레이드된 임상노트 생성 및 표시
+        if 'upgraded_note' not in st.session_state:
+            upgraded_note = generate_upgraded_clinical_note(
+                st.session_state.overall_decision,
+                st.session_state.user_input,
+                st.session_state.explanations
+            )
+            st.session_state['upgraded_note'] = upgraded_note
+
+        st.subheader("업그레이드된 임상노트")
+        with st.expander("업그레이드된 임상노트 보기"):
+            if st.session_state['upgraded_note']:
+                upgraded_note = st.session_state['upgraded_note']
+                note_area = st.text_area("업그레이드된 임상노트", value=upgraded_note, height=300)
+                if st.button("임상노트 복사하기"):
+                    st.write("임상노트가 클립보드에 복사되었습니다.")
+                    st.session_state['copy_text'] = upgraded_note
+                    st.write('<script>navigator.clipboard.writeText(`{}`).then(function() {{ console.log("텍스트가 클립보드에 복사되었습니다."); }}, function(err) {{ console.error("텍스트 복사 실패", err); }});</script>'.format(upgraded_note), unsafe_allow_html=True)
+            else:
+                st.write("업그레이드된 임상노트를 생성하는 중 문제가 발생했습니다.")
+
+
 
 # 채팅 기능 추가: 이전 내용들을 대화 내역에 추가하는 함수
 def add_to_conversation(role, message):
@@ -712,6 +735,42 @@ def feedback_section():
                 save_feedback_to_s3()
                 st.success("피드백이 전송되었습니다. 감사합니다!")
 
+def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
+    try:
+        prompt_template = st.secrets["openai"]["prompt_upgrade_note"]
+
+        # 삭감 사유 또는 추가 개선 사항을 추출
+        if overall_decision == "삭감될 가능성 높음":
+            # 삭감 사유를 explanations에서 추출
+            reasons = "\n".join([explanation['content_after_4'] for explanation in explanations])
+            guidance = f"다음 삭감 사유를 고려하여 임상노트를 개선하세요. 보존적 치료가 앞서 시행되었음을 강조하세요. :\n{reasons}"
+        else:
+            # 추가적인 개선 사항 제안
+            guidance = "임상노트를 더욱 완벽하게 만들기 위해 추가할 수 있는 내용을 추가하세요. 보존적 치료가 앞서 시행되었음을 강조하세요."
+
+        prompt = prompt_template.format(
+            overall_decision=overall_decision,
+            guidance=guidance,
+            user_input=user_input
+        )
+
+        with st.spinner("업그레이드된 임상노트 생성 중..."):
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "당신은 의료 문서를 작성하는 전문가입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.5,
+            )
+
+        upgraded_note = response.choices[0].message.content.strip()
+        return upgraded_note
+
+    except Exception as e:
+        st.error(f"업그레이드된 임상노트 생성 중 오류 발생: {e}")
+        return None
 
 
 # 메인 함수
