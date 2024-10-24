@@ -827,6 +827,8 @@ def main():
             st.session_state.scores = {}
             st.session_state.retry_type = None  # 재시도 유형 초기화
             st.session_state.retry_attempts = 0
+            st.session_state.upgraded_note = None
+            st.session_state.copy_text = ''
 
             st.session_state.structured_input, st.session_state.embedding = process_user_input(user_input)
             if not st.session_state.structured_input or not st.session_state.embedding:
