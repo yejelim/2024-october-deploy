@@ -751,7 +751,8 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
         prompt = prompt_template.format(
             overall_decision=overall_decision,
             guidance=guidance,
-            user_input=user_input
+            user_input=user_input,
+            explanations=explanations
         )
 
         with st.spinner("업그레이드된 임상노트 생성 중..."):
