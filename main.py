@@ -587,7 +587,7 @@ def display_results_and_analysis():
 
         st.subheader("업그레이드된 임상노트")
         with st.expander("업그레이드된 임상노트 보기"):
-            if 'upgraded_note' in st.session_state':
+            if 'upgraded_note' in st.session_state:
                 upgraded_note = st.session_state['upgraded_note']
                 note_area = st.text_area("업그레이드된 임상노트", value=upgraded_note, height=300)
                 
