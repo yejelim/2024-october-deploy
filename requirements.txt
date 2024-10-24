@@ -1,6 +1,5 @@
 # Streamlit
 streamlit==1.38.0
-streamlit.components.v1
 
 # OpenAI API
 openai==0.27.0
