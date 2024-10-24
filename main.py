@@ -590,9 +590,17 @@ def display_results_and_analysis():
                 upgraded_note = st.session_state['upgraded_note']
                 note_area = st.text_area("업그레이드된 임상노트", value=upgraded_note, height=300)
                 if st.button("임상노트 복사하기"):
-                    st.write("임상노트가 클립보드에 복사되었습니다.")
                     st.session_state['copy_text'] = upgraded_note
-                    st.write('<script>navigator.clipboard.writeText(`{}`).then(function() {{ console.log("텍스트가 클립보드에 복사되었습니다."); }}, function(err) {{ console.error("텍스트 복사 실패", err); }});</script>'.format(upgraded_note), unsafe_allow_html=True)
+                    # upgraded_note 값을 올바르게 format에 전달
+                    st.markdown(f"""
+                        <script>
+                            navigator.clipboard.writeText(`{st.session_state['copy_text']}`).then(function() {{
+                                alert("임상노트가 클립보드에 복사되었습니다.");
+                            }}, function(err) {{
+                                console.error("텍스트 복사 실패", err);
+                            }});
+                        </script>
+                    """, unsafe_allow_html=True)
             else:
                 st.write("업그레이드된 임상노트를 생성하는 중 문제가 발생했습니다.")
 
