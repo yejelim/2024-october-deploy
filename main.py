@@ -742,11 +742,6 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
     try:
         prompt_template = st.secrets["openai"]["prompt_upgrade_note"]
 
-        # 디버깅용 출력
-        st.write("overall_decision:", overall_decision)
-        st.write("user_input:", user_input)
-        st.write("explanations:", explanations)
-
         # explanations에서 필요한 내용을 추출하여 explanations_text 생성
         explanations_text = "\n\n".join([
             f"\n{explanation.get('content_after_4', '')}"
