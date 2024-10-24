@@ -31,7 +31,8 @@ def initialize_session_state():
         'metadatas': [],
         'full_response': '',
         'scores': {},
-        'retry_attempts': 0
+        'retry_attempts': 0,
+        'upgrade_note': None
     }
     for key, value in session_state_defaults.items():
         if key not in st.session_state:
