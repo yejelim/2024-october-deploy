@@ -474,7 +474,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 def extract_text_between_numbers(structured_input):
     import re
     # 정규표현식을 사용하여 "2."와 "6." 사이의 텍스트를 추출
-    pattern = r"3\.(.*?)5\."
+    pattern = r"2\.(.*?)5\."
     match = re.search(pattern, structured_input, re.DOTALL)
     if match:
         extracted_text = match.group(1).strip()
