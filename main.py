@@ -748,7 +748,8 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
         # 삭감 사유 또는 추가 개선 사항을 추출
         if overall_decision == "삭감될 가능성 높음":
             # 삭감 사유를 explanations에서 추출
-            guidance = f"다음 삭감 사유를 고려하여 임상노트를 개선하세요:\n{explanations_text}"        else:
+            guidance = f"다음 삭감 사유를 고려하여 임상노트를 개선하세요:\n{explanations_text}"        
+        else:
             # 추가적인 개선 사항 제안
             guidance = "임상노트를 더욱 완벽하게 만들기 위해 추가할 수 있는 내용을 추가하세요. 보존적 치료가 앞서 시행되었음을 강조하세요."
 
