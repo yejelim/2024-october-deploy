@@ -1,5 +1,6 @@
 # Streamlit
 streamlit==1.38.0
+streamlit-clipboard
 
 # OpenAI API
 openai==0.27.0
