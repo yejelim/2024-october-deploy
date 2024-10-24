@@ -575,7 +575,7 @@ def display_results_and_analysis():
                 st.write(explanation['content_after_4'])
 
         # 업그레이드된 임상노트 생성 및 표시
-        if 'upgraded_note' not in st.session_state:
+        if st.session_state['upgraded_note'] is None:
             upgraded_note = generate_upgraded_clinical_note(
                 st.session_state.overall_decision,
                 st.session_state.user_input,
