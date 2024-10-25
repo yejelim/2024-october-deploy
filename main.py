@@ -181,7 +181,7 @@ def load_data_if_department_selected(department):
         st.write(f"{department} 데이터 로드 중...")
         try:
             embedded_data = load_data_from_s3(bucket_name, file_key)
-            st.success("데이터 로드 완료.")
+            # st.success("데이터 로드 완료.")
             return embedded_data
         except Exception as e:
             st.error(f"데이터 로드 중 오류 발생: {e}")
@@ -697,7 +697,7 @@ def save_feedback_to_s3():
     # 세션 상태에서 기존의 사용자 로그 데이터를 가져옴
     user_log_data = st.session_state.get('user_log_data', {})
     if not user_log_data:
-        st.error("사용자 로그 데이터가 없습니다.")
+        st.error("서비스를 이용하신 후 피드백을 보내주세요.")
         return
     
     # 피드백 추가
