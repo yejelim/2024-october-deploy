@@ -48,8 +48,8 @@ openai.api_key = st.secrets["openai"]["openai_api_key"]
 # 로고 추가 함수
 def add_logo():
     with st.sidebar:
-        logo_url = "https://file.zillinks.com/prod/uploads/5e7dc67bfb4506bfa596f97d56212174_DYew5iQ.png"  # 올바른 URL 사용
-        st.image(logo_url, width=150)  # 로고 크기 조정
+        logo_path = "logo.png"  # 올바른 URL 사용
+        st.image(logo_path, width=150)  # 로고 크기 조정
 
 # 임상 노트 여부 확인 함수
 def check_if_clinical_note(text):
