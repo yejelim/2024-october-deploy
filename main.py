@@ -166,7 +166,7 @@ department_datasets = {
     },
     "대장항문외과 (Colorectal Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "colorectal_embedded_data.json"
+        "file_key": "tagged_colorectal_general_criterion_fixed.json"
     }
 }
 
