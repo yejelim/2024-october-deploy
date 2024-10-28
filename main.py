@@ -162,7 +162,7 @@ department_datasets = {
     },
     "혈관외과 (Vascular Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "tagged_vascular_filtered_criterion_fixed.json"
+        "file_key": "tagged_vascular_general_criterion_fixed.json"
     },
     "대장항문외과 (Colorectal Surgery)": {
         "bucket_name": "hemochat-rag-database",
