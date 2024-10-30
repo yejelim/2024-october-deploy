@@ -144,17 +144,24 @@ def collect_user_input():
     # 체크박스 크기 조절을 위한 CSS
     st.markdown("""
     <style>
-    input[type=checkbow] {
+    /* 체크박스 크기 증가 */
+    [data-testid="stCheckbox"] > label > div:first-child {
         transform: scale(1.5);
-        -webkit-transform: scale(1.5);
-        margin-right: 10px;
+    }
+        
+    /* 빨간색 안내 문구와 글자 크기 조정 */
+    .warning-text {
+        color: red;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # 체크박스 위에 빨간 안내문구 추가 (체크 안될때만 표시)
+    # 체크박스 위에 빨간색 안내 문구 추가 (체크되지 않은 경우에만 표시)
     if not st.session_state.get('agree_to_collect', False):
-        st.markdown('<span style="color:red;">약관에 동의하셔야 삭감여부 확인이 가능합니다.</span>', unsafe_allow_html=True)
+        st.markdown('<div class="warning-text">약관에 동의하셔야 삭감여부 확인이 가능합니다.</div>', unsafe_allow_html=True)
 
     agree_to_collect = st.checkbox(
         "사용자 정보를 수집하는 것에 동의합니다. 사용자의 텍스트 입력은 개인정보 보호를 위해 수집되지 않으며, 수집된 정보는 일정 기간 후 파기됩니다.",
