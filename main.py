@@ -152,7 +152,7 @@ def collect_user_input():
     /* 빨간색 안내 문구와 글자 크기 조정 */
     .warning-text {
         color: red;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: bold;
         margin-bottom: 6px;
     }
