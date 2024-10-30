@@ -141,16 +141,28 @@ def collect_user_input():
     st.session_state['other_occupation'] = other_occupation
     st.session_state['department'] = department
 
+    # 체크박스 크기 조절을 위한 CSS
+    st.markdown("""
+    <style>
+    input[type=checkbow] {
+        transform: scale(1.5);
+        -webkit-transform: scale(1.5);
+        margin-right: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 체크박스 위에 빨간 안내문구 추가 (체크 안될때만 표시)
+    if not st.session_state.get('agree_to_collect', False):
+        st.markdown('<span style="color:red;">약관에 동의하셔야 삭감여부 확인이 가능합니다.</span>', unsafe_allow_html=True)
+
     agree_to_collect = st.checkbox(
         "사용자 정보를 수집하는 것에 동의합니다. 사용자의 텍스트 입력은 개인정보 보호를 위해 수집되지 않으며, 수집된 정보는 일정 기간 후 파기됩니다.",
         key="agree_to_collect"
     )
 
     # '삭감 여부 확인' 버튼을 체크박스 동의 여부에 따라 활성화/비활성화
-    if agree_to_collect:
-        st.session_state['button_disabled'] = False
-    else:
-        st.session_state['button_disabled'] = True
+    st.session_state['button_disabled'] = not agree_to_collect
 
     return occupation, other_occupation, department, user_input
 
