@@ -324,7 +324,7 @@ def evaluate_relevance_with_gpt(structured_input, items):
                     {"role": "system", "content": "당신은 도움이 되는 어시스턴트입니다."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_tokens=100,
                 temperature=0.7,
             )
 
@@ -499,7 +499,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 def extract_text_between_numbers(structured_input):
     import re
     # 정규표현식을 사용하여 "2."와 "6." 사이의 텍스트를 추출
-    pattern = r"2\.(.*?)5\."
+    pattern = r"진단명(.*?)치료재료"
     match = re.search(pattern, structured_input, re.DOTALL)
     if match:
         extracted_text = match.group(1).strip()
