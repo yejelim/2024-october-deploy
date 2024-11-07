@@ -132,7 +132,8 @@ def collect_user_input():
             options=[
                 "신경외과 (Neuro-Surgery)",
                 "혈관외과 (Vascular Surgery)",
-                "대장항문외과 (Colorectal Surgery)"
+                "대장항문외과 (Colorectal Surgery)",
+                "정맥경장영양 (TPN)"
             ]
         )
 
@@ -177,7 +178,7 @@ def collect_user_input():
 department_datasets = {
     "신경외과 (Neuro-Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "18_aga_tagged_embedded_data.json"
+        "file_key": "Experimental_title_only_embedded_NS_criterion.json"
     },
     "혈관외과 (Vascular Surgery)": {
         "bucket_name": "hemochat-rag-database",
@@ -186,6 +187,10 @@ department_datasets = {
     "대장항문외과 (Colorectal Surgery)": {
         "bucket_name": "hemochat-rag-database",
         "file_key": "tagged_colorectal_general_criterion_fixed.json"
+    },
+    "정맥경장영양 (TPN)": {
+        "bucket_name": "hemochat-rag-database",
+        "file_key": "Experimental_title_only_embedded_TPN_criterion.json"
     }
 }
 
@@ -309,7 +314,7 @@ def find_top_n_similar(embedding, vectors, metadatas, top_n=5):
 def evaluate_relevance_with_gpt(structured_input, items):
     try:
         prompt_template = st.secrets["openai"]["prompt_scoring"]
-        formatted_items = "\n\n".join([f"항목 {i+1}: {item['요약']}" for i, item in enumerate(items)])
+        formatted_items = "\n\n".join([f"항목 {i+1}: {item['제목']}" for i, item in enumerate(items)])
         prompt = prompt_template.format(user_input=structured_input, items=formatted_items)
 
         with st.spinner("연관성 점수 평가 중..."):
