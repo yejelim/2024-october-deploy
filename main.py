@@ -314,7 +314,7 @@ def find_top_n_similar(embedding, vectors, metadatas, top_n=5):
 def evaluate_relevance_with_gpt(structured_input, items):
     try:
         prompt_template = st.secrets["openai"]["prompt_scoring"]
-        formatted_items = "\n\n".join([f"항목 {i+1}: {item['제목']}" for i, item in enumerate(items)])
+        formatted_items = "\n\n".join([f"항목 {i+1}: {item['요약']}" for i, item in enumerate(items)])
         prompt = prompt_template.format(user_input=structured_input, items=formatted_items)
 
         with st.spinner("연관성 점수 평가 중..."):
