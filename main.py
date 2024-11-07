@@ -499,7 +499,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 def extract_text_between_numbers(structured_input):
     import re
     # 정규표현식을 사용하여 "2."와 "6." 사이의 텍스트를 추출
-    pattern = r"진단명(.*?)치료재료"
+    pattern = r"수술 및 치료, 날짜나 기간\s*[:\-]?\s*(.*?)\s*치료재료"
     match = re.search(pattern, structured_input, re.DOTALL)
     if match:
         extracted_text = match.group(1).strip()
