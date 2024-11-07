@@ -178,7 +178,7 @@ def collect_user_input():
 department_datasets = {
     "신경외과 (Neuro-Surgery)": {
         "bucket_name": "hemochat-rag-database",
-        "file_key": "Experimental_title_only_embedded_NS_criterion.json"
+        "file_key": "18_aga_tagged_embedded_data.json"
     },
     "혈관외과 (Vascular Surgery)": {
         "bucket_name": "hemochat-rag-database",
@@ -407,7 +407,7 @@ def retry_embedding_and_search(department, user_input, vectors, metadatas):
 # 재시도 로직 처리 함수
 def handle_retries(department, user_input):
     if st.session_state.retry_attempts >= st.session_state.max_attempts:
-        st.warning("죄송합니다. 응담 과정에서 문제가 발생했습니다. 다시 시도하려면 '삭감 여부 확인' 버튼을 한 번 더 눌러주세요.")
+        st.warning("죄송합니다. 응답 과정에서 문제가 발생했습니다. 다시 시도하려면 '삭감 여부 확인' 버튼을 한 번 더 눌러주세요.")
         st.session_state.retry_type = None
         return
 
