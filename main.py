@@ -129,8 +129,8 @@ def collect_user_input():
         on_change=update_example_note
     )
 
-if 'user_input' not in st.session_state:
-    st.session_state['user_input'] = ""
+    if 'user_input' not in st.session_state:
+        st.session_state['user_input'] = ""
 
     user_input = st.text_area(
         "",
