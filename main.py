@@ -187,7 +187,7 @@ def collect_user_input():
         st.session_state['department'] = department
 
     # Department 값 검증 후 세션 상태 업데이트
-    if department:
+    if isinstance(department, str) and department:
         st.session_state['department'] = department
 
     # 세션 상태에 사용자 정보 저장
