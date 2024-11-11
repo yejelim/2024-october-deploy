@@ -127,7 +127,7 @@ def update_example_note():
         st.session_state['department'] = department
     else:
         st.session_state['user_input'] = ""
-        st.session_state['department'] = ""
+        st.session_state['department'] = department_options[0]
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():    
@@ -176,19 +176,21 @@ def collect_user_input():
 
     # Department 초기화 확인 및 선택창
     if 'department' not in st.session_state:
-        st.session_state['department'] = ""
+        st.session_state['department'] = department_options[0]
 
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
 
-    if st.session_state.get('department') not in department_options:
-        st.session_state['department'] = department_options[0]
+    if st.session_state['department'] in department_options:
+        department_index = department_options.index(st.session_state['department'])
+    else:
+        department_index = 0
 
     department = st.selectbox(
         "분과를 선택하세요:",
         options=department_options,
-        index=department_options.index(st.session_state['department']),
-        key='department'
+        index=department_index,
+        key='department_widget'
     )
 
     # 세션 상태에 사용자 정보 저장
