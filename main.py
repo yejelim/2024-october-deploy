@@ -104,10 +104,10 @@ def save_user_log_to_s3():
 
 #예시 임상노트 데이터 사용자가 선택할 수 있게 추가
 demo_clinical_notes = {
-    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", "신경외과 환자의 임상 노트 예시입니다."),
-    "혈관외과-사례1": ("혈관외과 (Vascular Surgery)", "혈관외과 환자의 임상 노트 예시입니다."),
+    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", "왼쪽 종아리가 당긴지 13일 된 환자인데 다른 병원에서 처방받은 약으로 보존적 치료했는데 효과가 없었다. 환자는 내원 당시 엄지발가락의 근력이 4로 저하되어 있었다. 요추 MRI를 본원에서 2023년 7월 14일에 촬영하였고 요추 4-5번간 디스크 파열 및 추간판 탈출로 인한 신경근 압박 소견이 확인 되었다.  근력 저하를 근거로 디스크 제거술을 2023년 7월 15일에 진행하였다. "),
+    "혈관외과-사례1": ("혈관외과 (Vascular Surgery)", "남/50세. 수술전후 진단: Obstruction of AVBG, Lt.upperarm. 수술명: Open Thrombectomy, Segmental resection of stenosis area, Jump graft- Anesthesia:General. Op Finding-1) GVA stenosis에 의한 폐쇄로 보임. 2) GVA 상방 Axillary vein에 new graft 연결. 3) Upperarm straight graft임."),
     "대장항문외과-사례1": ("대장항문외과 (Colorectal Surgery)", "대장항문외과 환자의 임상 노트 예시입니다."),
-    "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "정맥경장영양 환자의 임상 노트 예시입니다.")
+    "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "남/49세, 9일 전 입원. 8일 전 췌장암 두부 절제 후 단백아미노제재 TPN 1일 1회, 총 4회 투여.")
 }
 
 # 콜백을 사용해서 selectbox 예시노트 선택시 자동으로 text_area, department 업데이트를 UI로 반영해주는 함수
