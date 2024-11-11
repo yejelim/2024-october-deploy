@@ -175,14 +175,13 @@ def collect_user_input():
     ]
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
-    try:
-        department = st.selectbox(
-            "분과를 선택하세요:",
-            options=department_options,
-            index=0 if st.session_state['department'] == "" else department_options.index(st.session_state['department']),
-            key='department'  # 세션 상태와 연동
-        )
-        
+    department = st.selectbox(
+        "분과를 선택하세요:",
+        options=department_options,
+        index=0 if st.session_state['department'] == "" else department_options.index(st.session_state['department']),
+        key='department'  # 세션 상태와 연동
+    )
+
     # 세션 상태에 사용자 정보 저장
     st.session_state['occupation'] = occupation
     st.session_state['other_occupation'] = other_occupation
