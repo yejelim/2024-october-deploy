@@ -110,23 +110,33 @@ demo_clinical_notes = {
     "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "정맥경장영양 환자의 임상 노트 예시입니다.")
 }
 
-
-
-# 사용자 정보 및 입력을 수집하는 함수
-def collect_user_input():
-    user_input = st.text_area("", height=500, placeholder="SOAP 등의 임상기록 및 치료 방법 (약물,시술,수술) 등을 입력해주세요.")
-    
-    # 예시 임상노트를 선택하는 경우에 대한 부분 추가
-    st.subheader("예시 임상노트 선택")
-    selected_example = st.selectbox("예시 임상노트를 선택하세요:", ["없음"] + list(demo_clinical_notes.keys()))
-
+# 콜백을 사용해서 selectbox 예시노트 선택시 자동으로 text_area, department 업데이트를 UI로 반영해주는 함수
+def update_example_note():
+    selected_example = st.session_state['selected_example']
     if selected_example != "없음":
         department, example_note = demo_clinical_notes[selected_example]
-        st.session_state['department'] = department
         st.session_state['user_input'] = example_note
-        user_input = example_note
-        st.info(f"선택한 예시 임상노트가 입력창에 자동으로 작성되었습니다. 분과: {department}")
-    
+        st.session_state['department'] = department
+
+# 사용자 정보 및 입력을 수집하는 함수
+def collect_user_input():    
+    # 예시 임상노트를 선택하는 경우에 대한 부분 추가
+    st.subheader("예시 임상노트 선택")
+    st.selectbox(
+        "아래에서 예시 임상노트를 선택하세요:",
+        ["없음"] + list(demo_clinical_notes.keys()),
+        key="selected_example",
+        on_change=update_example_note
+    )
+  
+    user_input = st.text_area(
+        "",
+        height=500,
+        value=st.session_state.get('user_input', ""),
+        placeholder="SOAP 등의 임상기록 및 치료 방법 (약물, 시술, 수술) 등을 입력해주세요.",
+        key='user_input'
+    )
+
     if user_input:
         with st.spinner("임상 노트 여부 확인 중..."):
             is_clinical_note = check_if_clinical_note(user_input)
@@ -148,18 +158,24 @@ def collect_user_input():
     else:
         other_occupation = None
 
-    department = None
-    if occupation:
-        st.subheader("어떤 분과에 재직 중인지 알려주세요.")
-        department = st.selectbox(
-            "분과를 선택하세요:",
-            options=[
-                "신경외과 (Neuro-Surgery)",
-                "혈관외과 (Vascular Surgery)",
-                "대장항문외과 (Colorectal Surgery)",
-                "정맥경장영양 (TPN)"
-            ]
-        )
+    # Department 선택창
+    st.subheader("어떤 분과에 재직 중인지 알려주세요.")
+    department=st.selectbox(
+        "분과를 선택하세요:",
+        options=[
+            "신경외과 (Neuro-Surgery)",
+            "혈관외과 (Vascular Surgery)",
+            "대장항문외과 (Colorectal Surgery)",
+            "정맥경장영양 (TPN)"
+        ],
+        index=0 if 'department' not in st.session_state else [
+            "신경외과 (Neuro-Surgery)",
+            "혈관외과 (Vascular Surgery)",
+            "대장항문외과 (Colorectal Surgery)",
+            "정맥경장영양 (TPN)"
+        ].index(st.session_state['department']),
+        key='department'  # 세션 상태와 연동
+    )
 
     # 세션 상태에 사용자 정보 저장
     st.session_state['occupation'] = occupation
@@ -197,6 +213,7 @@ def collect_user_input():
     st.session_state['button_disabled'] = not agree_to_collect
 
     return occupation, other_occupation, department, user_input
+
 
 # 분과 데이터셋: 추가될 때마다 업데이트 할 부분
 department_datasets = {
