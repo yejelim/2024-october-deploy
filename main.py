@@ -180,9 +180,10 @@ def collect_user_input():
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
 
     # st.session_state['department']가 Department_option에 있는지 확인
-    if st.session_state['department'] in department_options:
+    department_value = st.session_state.get('department', "")
+    try:
         department_index = department_options.index(st.session_state['department'])
-    else:
+    except ValueError:
         department_index = 0
 
     department = st.selectbox(
