@@ -661,22 +661,6 @@ def display_results_and_analysis():
                 upgraded_note = st.session_state['upgraded_note']
                 note_area = st.text_area("업그레이드된 임상노트", value=upgraded_note, height=300)
                 
-                if st.button("임상노트 복사하기"):
-                    # upgraded_note 값을 올바르게 format에 전달
-                    # HTML과 JavaScript를 사용하여 클립보드 복사 기능 구현
-                    components.html(f"""
-                        <script>
-                            function copyToClipboard() {{
-                                var text = `{upgraded_note}`;
-                                navigator.clipboard.writeText(text).then(function() {{
-                                    alert("임상노트가 클립보드에 복사되었습니다.");
-                                }}, function(err) {{
-                                    console.error("텍스트 복사 실패", err);
-                                }});
-                            }}
-                            copyToClipboard();
-                        </script>
-                    """, height=0)
             else:
                 st.write("업그레이드된 임상노트를 생성하는 중 문제가 발생했습니다.")
 
