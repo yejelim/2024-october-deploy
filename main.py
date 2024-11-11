@@ -117,6 +117,9 @@ def update_example_note():
         department, example_note = demo_clinical_notes[selected_example]
         st.session_state['user_input'] = example_note
         st.session_state['department'] = department
+    else:
+        st.session_state['user_input'] = ""
+        st.session_state['department'] = ""
 
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():    
@@ -175,6 +178,13 @@ def collect_user_input():
     ]
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
+
+    # st.session_state['department']가 Department_option에 있는지 확인
+    if st.session_state['department'] in department_options:
+        department_index = department_options.index(st.session_state['department'])
+    else:
+        department_index = 0
+
     department = st.selectbox(
         "분과를 선택하세요:",
         options=department_options,
