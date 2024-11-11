@@ -118,9 +118,9 @@ def collect_user_input():
     
     # 예시 임상노트를 선택하는 경우에 대한 부분 추가
     st.subheader("예시 임상노트 선택")
-    selected_example = st.selectbox("예시 임상노트를 선택하세요:", list(demo_clinical_notes.keys()))
+    selected_example = st.selectbox("예시 임상노트를 선택하세요:", ["없음"] + list(demo_clinical_notes.keys()))
 
-    if selected_example:
+    if selected_example != "없음":
         department, example_note = demo_clinical_notes[selected_example]
         st.session_state['department'] = department
         st.session_state['user_input'] = example_note
@@ -135,7 +135,7 @@ def collect_user_input():
         else:
             st.session_state.user_input = user_input
             st.session_state.is_clinical_note = True
-            
+
     st.subheader("어떤 분야에 종사하시나요?")
     occupation = st.radio(
         "직업을 선택하세요:",
