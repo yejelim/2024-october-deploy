@@ -128,7 +128,10 @@ def collect_user_input():
         key="selected_example",
         on_change=update_example_note
     )
-  
+
+if 'user_input' not in st.session_state:
+    st.session_state['user_input'] = ""
+
     user_input = st.text_area(
         "",
         height=500,
@@ -137,13 +140,15 @@ def collect_user_input():
         key='user_input'
     )
 
+    if user_input != st.session_state['user_input']:
+        st.session_state['user_input'] = user_input
+
     if user_input:
         with st.spinner("임상 노트 여부 확인 중..."):
             is_clinical_note = check_if_clinical_note(user_input)
         if not is_clinical_note:
             st.warning("입력한 텍스트가 임상노트가 아닙니다. 텍스트를 확인해주세요.")
         else:
-            st.session_state.user_input = user_input
             st.session_state.is_clinical_note = True
 
     st.subheader("어떤 분야에 종사하시나요?")
