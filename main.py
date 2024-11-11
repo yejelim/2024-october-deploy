@@ -110,6 +110,14 @@ demo_clinical_notes = {
     "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "남/49세, 9일 전 입원. 8일 전 췌장암 두부 절제 후 단백아미노제재 TPN 1일 1회, 총 4회 투여.")
 }
 
+department_options = [
+    "신경외과 (Neuro-Surgery)",
+    "혈관외과 (Vascular Surgery)",
+    "대장항문외과 (Colorectal Surgery)",
+    "정맥경장영양 (TPN)"
+]
+
+
 # 콜백을 사용해서 selectbox 예시노트 선택시 자동으로 text_area, department 업데이트를 UI로 반영해주는 함수
 def update_example_note():
     selected_example = st.session_state['selected_example']
@@ -170,30 +178,21 @@ def collect_user_input():
     if 'department' not in st.session_state:
         st.session_state['department'] = ""
 
-    department_options = [
-        "신경외과 (Neuro-Surgery)",
-        "혈관외과 (Vascular Surgery)",
-        "대장항문외과 (Colorectal Surgery)",
-        "정맥경장영양 (TPN)"
-    ]
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
 
-    # st.session_state['department']가 Department_option에 있는지 확인
-    department_value = st.session_state.get('department', "")
-    try:
-        department_index = department_options.index(st.session_state['department'])
-    except ValueError:
-        department_index = 0
+    if st.session_state.get('department') not in department_options:
+        st.session_state['department'] = department_options[0]
 
     department = st.selectbox(
         "분과를 선택하세요:",
         options=department_options,
-        index=0 if st.session_state['department'] == "" else department_options.index(st.session_state['department']),
-        key='department'  # 세션 상태와 연동
+        index=department_options.index(st.session_state['department']),
+        key='department'
     )
 
     # 세션 상태에 사용자 정보 저장
+    st.session_state['department'] = department
     st.session_state['occupation'] = occupation
     st.session_state['other_occupation'] = other_occupation
 
