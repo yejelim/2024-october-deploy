@@ -159,6 +159,9 @@ def collect_user_input():
         other_occupation = None
 
     # Department 선택창
+    if 'department' not in st.session_state:
+        st.session_state['department'] = ""
+
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
     department=st.selectbox(
         "분과를 선택하세요:",
@@ -177,10 +180,12 @@ def collect_user_input():
         key='department'  # 세션 상태와 연동
     )
 
+    if department:
+        st.session_state['department'] = department
+
     # 세션 상태에 사용자 정보 저장
     st.session_state['occupation'] = occupation
     st.session_state['other_occupation'] = other_occupation
-    st.session_state['department'] = department
 
     # 체크박스 크기 조절을 위한 CSS
     st.markdown("""
