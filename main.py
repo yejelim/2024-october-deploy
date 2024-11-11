@@ -101,9 +101,32 @@ def save_user_log_to_s3():
     except Exception as e:
         st.error(f"로그 수집 중 오류 발생: {e}")
 
+
+#예시 임상노트 데이터 사용자가 선택할 수 있게 추가
+demo_clinical_notes = {
+    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", "신경외과 환자의 임상 노트 예시입니다."),
+    "혈관외과-사례1": ("혈관외과 (Vascular Surgery)", "혈관외과 환자의 임상 노트 예시입니다."),
+    "대장항문외과-사례1": ("대장항문외과 (Colorectal Surgery)", "대장항문외과 환자의 임상 노트 예시입니다."),
+    "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "정맥경장영양 환자의 임상 노트 예시입니다.")
+}
+
+
+
 # 사용자 정보 및 입력을 수집하는 함수
 def collect_user_input():
     user_input = st.text_area("", height=500, placeholder="SOAP 등의 임상기록 및 치료 방법 (약물,시술,수술) 등을 입력해주세요.")
+    
+    # 예시 임상노트를 선택하는 경우에 대한 부분 추가
+    st.subheader("예시 임상노트 선택")
+    selected_example = st.selectbox("예시 임상노트를 선택하세요:", list(demo_clinical_notes.keys()))
+
+    if selected_example:
+        department, example_note = demo_clinical_notes[selected_example]
+        st.session_state['department'] = department
+        st.session_state['user_input'] = example_note
+        user_input = example_note
+        st.info(f"선택한 예시 임상노트가 입력창에 자동으로 작성되었습니다. 분과: {department}")
+    
     if user_input:
         with st.spinner("임상 노트 여부 확인 중..."):
             is_clinical_note = check_if_clinical_note(user_input)
@@ -112,6 +135,7 @@ def collect_user_input():
         else:
             st.session_state.user_input = user_input
             st.session_state.is_clinical_note = True
+            
     st.subheader("어떤 분야에 종사하시나요?")
     occupation = st.radio(
         "직업을 선택하세요:",
