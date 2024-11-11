@@ -182,14 +182,7 @@ def collect_user_input():
             index=0 if st.session_state['department'] == "" else department_options.index(st.session_state['department']),
             key='department'  # 세션 상태와 연동
         )
-    except ValueError:
-        department = department_options[0]  # 기본값으로 설정
-        st.session_state['department'] = department
-
-    # Department 값 검증 후 세션 상태 업데이트
-    if isinstance(department, str) and department:
-        st.session_state['department'] = department
-
+        
     # 세션 상태에 사용자 정보 저장
     st.session_state['occupation'] = occupation
     st.session_state['other_occupation'] = other_occupation
