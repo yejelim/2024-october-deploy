@@ -158,28 +158,30 @@ def collect_user_input():
     else:
         other_occupation = None
 
-    # Department 선택창
+    # Department 초기화 확인 및 선택창
     if 'department' not in st.session_state:
         st.session_state['department'] = ""
 
-    st.subheader("어떤 분과에 재직 중인지 알려주세요.")
-    department=st.selectbox(
-        "분과를 선택하세요:",
-        options=[
-            "신경외과 (Neuro-Surgery)",
-            "혈관외과 (Vascular Surgery)",
-            "대장항문외과 (Colorectal Surgery)",
-            "정맥경장영양 (TPN)"
-        ],
-        index=0 if 'department' not in st.session_state else [
-            "신경외과 (Neuro-Surgery)",
-            "혈관외과 (Vascular Surgery)",
-            "대장항문외과 (Colorectal Surgery)",
-            "정맥경장영양 (TPN)"
-        ].index(st.session_state['department']),
-        key='department'  # 세션 상태와 연동
-    )
+    department_options = [
+        "신경외과 (Neuro-Surgery)",
+        "혈관외과 (Vascular Surgery)",
+        "대장항문외과 (Colorectal Surgery)",
+        "정맥경장영양 (TPN)"
+    ]
 
+    st.subheader("어떤 분과에 재직 중인지 알려주세요.")
+    try:
+        department = st.selectbox(
+            "분과를 선택하세요:",
+            options=department_options,
+            index=0 if st.session_state['department'] == "" else department_options.index(st.session_state['department']),
+            key='department'  # 세션 상태와 연동
+        )
+    except ValueError:
+        department = department_options[0]  # 기본값으로 설정
+        st.session_state['department'] = department
+
+    # Department 값 검증 후 세션 상태 업데이트
     if department:
         st.session_state['department'] = department
 
