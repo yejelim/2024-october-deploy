@@ -984,7 +984,22 @@ def main():
 
     feedback_section()
 
-    st.sidebar.subheader(f"Total 방문자 수: {visitor_count}")
+    with st.sidebar:
+        # HTML과 CSS를 이용해 서브헤더 스타일 조정
+        st.markdown(f"""
+        <style>
+        .total-visitor {{
+            font-size: 16px;
+            color: #FF0000;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }}
+        </style>
+        <p class="total-visitor">Total 방문자 수: {visitor_count}</p>
+        """, unsafe_allow_html=True)
+
+    # st.markdown('<p class="total-visitor">Total 방문자 수: </p>', unsafe_allow_html=True)
+    # st.sidebar.subheader(f"Total 방문자 수: {visitor_count}")
 
 if __name__ == "__main__":
     main()
