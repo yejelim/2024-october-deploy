@@ -140,8 +140,10 @@ def collect_user_input():
         on_change=update_example_note
     )
 
-    if 'user_input' not in st.session_state:
-        st.session_state['user_input'] = ""
+    # 이 부분에서 user_input이 session_state 에 없을 시,
+    # session_state에 user_input을 추가하고, user_input을 빈 문자열로 초기화하는 함수가 있었음
+    # 어차피 코드 실행 직후에 initializing 함수가 실행되므로
+    # redundant한 두 줄을 제거해버림
 
     user_input = st.text_area(
         "",
@@ -174,9 +176,9 @@ def collect_user_input():
     else:
         other_occupation = None
 
-    # Department 초기화 확인 및 선택창
-    if 'department' not in st.session_state:
-        st.session_state['department'] = department_options[0]
+    # Department 초기화 확인 및 선택창, 어차피 초기화 함수가 있으므로 제거
+    # if 'department' not in st.session_state:
+    #    st.session_state['department'] = department_options[0]
 
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
