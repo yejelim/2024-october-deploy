@@ -991,7 +991,6 @@ def main():
         .total-visitor {{
             font-size: 12px;
             color: #000000;
-            font-weight: bold;
             margin-bottom: 10px;
         }}
         </style>
