@@ -176,7 +176,7 @@ def collect_user_input():
     else:
         other_occupation = None
 
-    # Department 초기화 확인 및 선택창, 어차피 초기화 함수가 있으므로 제거
+    # Department 초기화 확인 및 선택창, 어차피 초기화 함수가 있으므로 제거해도 되는줄 알았는데 아니었다....
     if 'department' not in st.session_state:
        st.session_state['department'] = department_options[0]
 
@@ -274,7 +274,7 @@ def load_data_if_department_selected(department):
         return []
 
 # AWS S3에서 임베딩 데이터를 로드하는 함수
-def load_data_from_s3(bucket_name, file_key):
+def load_data_from_s3(bucket_name, file_key, file_type="embedding"):
     try:
         s3_client = boto3.client(
             's3',
@@ -284,10 +284,48 @@ def load_data_from_s3(bucket_name, file_key):
         )
         response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
         data = response['Body'].read().decode('utf-8')
-        return json.loads(data)
+        loaded_data = json.loads(data)
+    
+        # 방문자 수와 임베딩 데이터의 처리를 구분
+        if file_type == "visitor":
+            return loaded_data.get('count', 0)
+        else:
+            return loaded_data
     except Exception as e:
         st.error(f"S3에서 데이터 로드 중 오류 발생: {e}")
-        return []
+        return [] if file_type == "embedding" else 0
+    
+# 방문자 수 가져오기 함수
+def get_visitor_count(bucket_name, file_key):
+    return load_data_from_s3(bucket_name, file_key, file_type="visitor")
+
+# 방문자 수 업데이트 함수
+def update_visitor_count(bucket_name, file_key):
+    current_count = get_visitor_count(bucket_name, file_key)
+    new_count = current_count + 1
+
+    # 업데이트된 방문자 수를 S3에 저장
+    visitor_data = {'count': new_count}
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=st.secrets["aws"]["access_key"],
+            aws_secret_access_key=st.secrets["aws"]["secret_key"],
+            region_name='ap-northeast-2'
+        )
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=file_key,
+            Body=json.dumps(visitor_data)
+        )
+        return new_count
+    except Exception as e:
+        st.error(f"방문자 수 업데이트 중 오류 발생: {e}")
+        return current_count
+
+bucket_name = "hemochat-rag-database"
+visitor_file_key = "visitor_count.json"
+visitor_count = update_visitor_count(bucket_name, visitor_file_key)
 
 # JSON에서 임베딩 벡터와 메타데이터 추출
 def extract_vectors_and_metadata(embedded_data):
@@ -945,6 +983,9 @@ def main():
     display_chat_interface()
 
     feedback_section()
+
+    st.sidebar.subheader("Total 방문자 수")
+    st.sidebar.write(visitor_count)
 
 if __name__ == "__main__":
     main()
