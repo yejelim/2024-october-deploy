@@ -177,8 +177,8 @@ def collect_user_input():
         other_occupation = None
 
     # Department 초기화 확인 및 선택창, 어차피 초기화 함수가 있으므로 제거
-    # if 'department' not in st.session_state:
-    #    st.session_state['department'] = department_options[0]
+    if 'department' not in st.session_state:
+       st.session_state['department'] = department_options[0]
 
 
     st.subheader("어떤 분과에 재직 중인지 알려주세요.")
