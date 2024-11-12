@@ -984,8 +984,7 @@ def main():
 
     feedback_section()
 
-    st.sidebar.subheader("Total 방문자 수")
-    st.sidebar.write(visitor_count)
+    st.sidebar.subheader("Total 방문자 수: {visitor_count}")
 
 if __name__ == "__main__":
     main()
