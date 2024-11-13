@@ -949,10 +949,6 @@ def main():
     add_logo()
     st.title("의료비 삭감 판정 어시스트 - <삭감노노>")
 
-    bucket_name = "hemochat-rag-database"
-    visitor_file_key = "visitor_count.json"
-    display_visitor_count(bucket_name, visitor_file_key)
-
     # 1. 사용자 정보 및 입력 수집
     choose_demo_clinical_note()
     user_input = get_user_clinical_note()
@@ -1032,6 +1028,10 @@ def main():
     display_chat_interface()
 
     feedback_section()
+
+    bucket_name = "hemochat-rag-database"
+    visitor_file_key = "visitor_count.json"
+    display_visitor_count(bucket_name, visitor_file_key)
 
 
 
