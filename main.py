@@ -156,7 +156,7 @@ def get_user_clinical_note():
         "",
         height=500,
         placeholder="SOAP 등의 임상기록 및 치료 방법 (약물, 시술, 수술) 등을 입력해주세요.",
-        key='user_input_widget'
+        key='user_input'
     )
     return user_input
 
@@ -180,7 +180,7 @@ def get_occupation():
         "직업을 선택하세요:",
         options=["의사", "간호사", "병원내 청구팀", "기타"],
         index=0,
-        key='occupation_widget'
+        key='occupation'
     )
 
     if occupation == "기타":
@@ -200,10 +200,16 @@ def get_department():
         "분과를 선택하세요:",
         options=department_options,
         index=department_index,
-        key='department_widget' # 세션 상태 키와 동일하게 설정
+        key='department' # 세션 상태 키와 동일하게 설정
     )
 
     return department
+
+def save_user_department_occupation(department, occupation, other_occupation):
+    # 세션 상태에 사용자 정보 저장
+    st.session_state['department'] = department
+    st.session_state['occupation'] = occupation
+    st.session_state['other_occupation'] = other_occupation
 
 def apply_custom_css_to_checkbox():
     # 체크박스 크기 조절을 위한 CSS
@@ -334,9 +340,19 @@ def update_visitor_count(bucket_name, file_key):
         st.error(f"방문자 수 업데이트 중 오류 발생: {e}")
         return current_count
 
-bucket_name = "hemochat-rag-database"
-visitor_file_key = "visitor_count.json"
-visitor_count = update_visitor_count(bucket_name, visitor_file_key)
+def display_visitor_count(bucket_name, visitor_file_key):
+    visitor_count = update_visitor_count(bucket_name, visitor_file_key)
+    st.sidebar.markdown(f"""
+     <style>
+    .total-visitor {{
+        font-size: 12px;
+        color: #000000;
+        margin-bottom: 10px;
+    }}
+    </style>
+    <p class="total-visitor">Total 방문자 수: {visitor_count}</p>
+    """, unsafe_allow_html=True)
+
 
 # JSON에서 임베딩 벡터와 메타데이터 추출
 def extract_vectors_and_metadata(embedded_data):
@@ -933,12 +949,17 @@ def main():
     add_logo()
     st.title("의료비 삭감 판정 어시스트 - <삭감노노>")
 
+    bucket_name = "hemochat-rag-database"
+    visitor_file_key = "visitor_count.json"
+    display_visitor_count(bucket_name, visitor_file_key)
+
     # 1. 사용자 정보 및 입력 수집
     choose_demo_clinical_note()
     user_input = get_user_clinical_note()
     check_clinical_note_status(user_input)
     occupation, other_occupation = get_occupation()
     department = get_department()
+    save_user_department_occupation(department, occupation, other_occupation)
     apply_custom_css_to_checkbox()
     display_warning_without_agree()
     handle_agreement_state()
@@ -1012,21 +1033,7 @@ def main():
 
     feedback_section()
 
-    with st.sidebar:
-        # HTML과 CSS를 이용해 서브헤더 스타일 조정
-        st.markdown(f"""
-        <style>
-        .total-visitor {{
-            font-size: 12px;
-            color: #000000;
-            margin-bottom: 10px;
-        }}
-        </style>
-        <p class="total-visitor">Total 방문자 수: {visitor_count}</p>
-        """, unsafe_allow_html=True)
 
-    # st.markdown('<p class="total-visitor">Total 방문자 수: </p>', unsafe_allow_html=True)
-    # st.sidebar.subheader(f"Total 방문자 수: {visitor_count}")
 
 if __name__ == "__main__":
     main()
