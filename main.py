@@ -180,7 +180,7 @@ def get_occupation():
         "직업을 선택하세요:",
         options=["의사", "간호사", "병원내 청구팀", "기타"],
         index=0,
-        key='occupation'
+        key='occupation_widget'
     )
 
     if occupation == "기타":
@@ -204,12 +204,6 @@ def get_department():
     )
 
     return department
-
-def save_user_department_occupation(department, occupation, other_occupation):
-    # 세션 상태에 사용자 정보 저장
-    st.session_state['department'] = department
-    st.session_state['occupation'] = occupation
-    st.session_state['other_occupation'] = other_occupation
 
 def apply_custom_css_to_checkbox():
     # 체크박스 크기 조절을 위한 CSS
@@ -945,7 +939,6 @@ def main():
     check_clinical_note_status(user_input)
     occupation, other_occupation = get_occupation()
     department = get_department()
-    save_user_department_occupation(department, occupation, other_occupation)
     apply_custom_css_to_checkbox()
     display_warning_without_agree()
     handle_agreement_state()
