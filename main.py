@@ -156,7 +156,7 @@ def get_user_clinical_note():
         "",
         height=500,
         placeholder="SOAP 등의 임상기록 및 치료 방법 (약물, 시술, 수술) 등을 입력해주세요.",
-        key='user_input'
+        key='user_input_widget'
     )
     return user_input
 
@@ -200,7 +200,7 @@ def get_department():
         "분과를 선택하세요:",
         options=department_options,
         index=department_index,
-        key='department' # 세션 상태 키와 동일하게 설정
+        key='department_widget' # 세션 상태 키와 동일하게 설정
     )
 
     return department
