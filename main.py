@@ -59,7 +59,8 @@ def initialize_session_state():
         'errors': [],
         'embedding': None,
         'agree_to_collect': False,
-        'button_disabled': True
+        'button_disabled': True,
+        'visitor_counted': False
     }
     for key, value in session_state_defaults.items():
         if key not in st.session_state:
@@ -324,12 +325,7 @@ def update_visitor_count(bucket_name, file_key):
     # 업데이트된 방문자 수를 S3에 저장
     visitor_data = {'count': new_count}
     try:
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=st.secrets["aws"]["access_key"],
-            aws_secret_access_key=st.secrets["aws"]["secret_key"],
-            region_name='ap-northeast-2'
-        )
+        s3_client = create_s3_client()
         s3_client.put_object(
             Bucket=bucket_name,
             Key=file_key,
@@ -340,18 +336,27 @@ def update_visitor_count(bucket_name, file_key):
         st.error(f"방문자 수 업데이트 중 오류 발생: {e}")
         return current_count
 
-def display_visitor_count(bucket_name, visitor_file_key):
-    visitor_count = update_visitor_count(bucket_name, visitor_file_key)
-    st.sidebar.markdown(f"""
-     <style>
-    .total-visitor {{
-        font-size: 12px;
-        color: #000000;
-        margin-bottom: 10px;
-    }}
-    </style>
-    <p class="total-visitor">Total 방문자 수: {visitor_count}</p>
-    """, unsafe_allow_html=True)
+def display_visitor_count():
+    bucket_name = "hemochat-rag-database"
+    visitor_file_key = "visitor_count.json"
+
+    if not st.session_state['visitor_counted']:
+        visitor_count = update_visitor_count(bucket_name, visitor_file_key)
+        st.session_state['visitor_counted'] = True
+    else:
+        visitor_count = get_visitor_count(bucket_name, visitor_file_key)
+
+    with st.sidebar:
+        st.markdown(f"""
+        <style>
+        .total-visitor {{
+            font-size: 12px;
+            color: #000000;
+            margin-bottom: 10px;
+        }}
+        </style>
+        <p class="total-visitor">Total 방문자 수: {visitor_count}</p>
+        """, unsafe_allow_html=True)
 
 
 # JSON에서 임베딩 벡터와 메타데이터 추출
@@ -1029,9 +1034,7 @@ def main():
 
     feedback_section()
 
-    bucket_name = "hemochat-rag-database"
-    visitor_file_key = "visitor_count.json"
-    display_visitor_count(bucket_name, visitor_file_key)
+    display_visitor_count()
 
 
 
