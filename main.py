@@ -268,7 +268,7 @@ def get_department():
         "분과를 선택하세요:",
         options=department_options,
         index=department_index,
-        key='department' # 세션 상태 키와 동일하게 설정
+        key='department_widget' # 세션 상태 키와 동일하게 설정
     )
 
     return department
