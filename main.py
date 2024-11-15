@@ -17,10 +17,77 @@ st.set_page_config(
 
 #예시 임상노트 데이터 사용자가 선택할 수 있게 추가
 demo_clinical_notes = {
-    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", "왼쪽 종아리가 당긴지 13일 된 환자인데 다른 병원에서 처방받은 약으로 보존적 치료했는데 효과가 없었다. 환자는 내원 당시 엄지발가락의 근력이 4로 저하되어 있었다. 요추 MRI를 본원에서 2023년 7월 14일에 촬영하였고 요추 4-5번간 디스크 파열 및 추간판 탈출로 인한 신경근 압박 소견이 확인 되었다.  근력 저하를 근거로 디스크 제거술을 2023년 7월 15일에 진행하였다."),
-    "혈관외과-사례1": ("혈관외과 (Vascular Surgery)", "남/50세. 수술전후 진단: Obstruction of AVBG, Lt.upperarm. 수술명: Open Thrombectomy, Segmental resection of stenosis area, Jump graft- Anesthesia:General. Op Finding-1) GVA stenosis에 의한 폐쇄로 보임. 2) GVA 상방 Axillary vein에 new graft 연결. 3) Upperarm straight graft임."),
-    "대장항문외과-사례1": ("대장항문외과 (Colorectal Surgery)", "대장항문외과 환자의 임상 노트 예시입니다."),
-    "정맥경장영양-사례1": ("정맥경장영양 (TPN)", "남/49세, 9일 전 입원. 8일 전 췌장암 두부 절제 후 단백아미노제재 TPN 1일 1회, 총 4회 투여.")
+    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", ''' 
+1달 전 무거운 것 들다가 
+우측 엉치 통증 발생
+우측 종아리, 발바닥 전체가 쥐난다
+
+타원에서
+Nerve block 2차례
+효과가 미미하다
+
+이젠 걷기가 힘들다
+
+VAS 7-8
+
+Hip Flexion, III/V 
+Knee Extension, V/V 
+ADF, III/V
+GTE, V/V
+APF, V/V 
+
+SLR +/-
+
+A)
+HNP L5/S1 Rt 
+
+P)
+discectomy L5/S1 Rt'''),
+    "혈관외과-사례1": ("혈관외과 (Vascular Surgery)", '''
+1달 전 혈액투석 중
+좌측 상완에 부종 및 통증 발생
+혈액 투석 시 혈류 불량으로 투석 어려움
+
+타원에서
+혈관 도플러 검사 진행
+혈관 협착 및 폐쇄 진단
+
+현재는 투석 시 통증 심화 및 팔 부종 지속
+
+VAS 6-7
+
+상완 부위 촉진 시 부종 및 통증
+AVBG 도플러 검사: 혈류 저하 소견
+
+A)
+Obstruction of AVBG, Lt. upper arm (GVA Stenosis)
+
+P)
+Open Thrombectomy, Segmental resection of stenosis area, Jump graft'''),
+    "대장항문외과-사례1": ("대장항문외과 (Colorectal Surgery)", '''
+1달 전부터 발생한 RLQ pain으로 내원함
+underlying dz(-)
+OPHx(-)
+
+Td/RTd(+/+) : RLQ
+
+외부 U/S)
+appendiceal wall thickening, max diameter 16mm
+
+A) 
+Acute appendicitis
+
+P)
+Appendectomy
+'''),
+    "정맥경장영양-사례1": ("정맥경장영양 (TPN)", '''
+남 49세
+
+9일 전 입원. 
+
+8일 전 췌장암 두부 절제 후 단백아미노제재 TPN 1L 1일 1회
+
+총 4회 투여.''')
 }
 
 department_options = [
@@ -446,7 +513,7 @@ def find_top_n_similar(embedding, vectors, metadatas, top_n=5):
     return top_results
 
 # GPT-4 모델을 사용하여 연관성 점수를 평가하는 함수
-def evaluate_relevance_with_gpt(structured_input, items):
+def evaluate_relevance_score_with_gpt(structured_input, items):
     try:
         prompt_template = st.secrets["openai"]["prompt_scoring"]
         formatted_items = "\n\n".join([f"항목 {i+1}: {item['요약']}" for i, item in enumerate(items)])
@@ -493,7 +560,7 @@ def retry_scoring_gpt(structured_input, items):
         st.session_state.score_parsing_attempt += 1
         st.warning(f"스코어 추출에 실패했습니다. 스코어링 GPT를 다시 호출합니다... (시도 {st.session_state.score_parsing_attempt}/{st.session_state.max_attempts})")
         # 스코어링 GPT 다시 호출
-        new_response = evaluate_relevance_with_gpt(structured_input, items)
+        new_response = evaluate_relevance_score_with_gpt(structured_input, items)
         return new_response
     else:
         st.warning("스코어 추출에 여러 번 실패했습니다. '삭감 여부 확인' 버튼을 다시 눌러주세요.")
@@ -604,7 +671,7 @@ def display_results(embedding, vectors, metadatas, structured_input):
 
     items = [result['메타데이터'] for result in top_results]
 
-    full_response = evaluate_relevance_with_gpt(structured_input, items)
+    full_response = evaluate_relevance_score_with_gpt(structured_input, items)
 
     if full_response:
         scores = extract_scores(full_response, len(items))
