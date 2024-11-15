@@ -210,7 +210,7 @@ def choose_demo_clinical_note():
     st.selectbox(
         "아래에서 예시 임상노트를 선택하세요:",
         ["없음"] + list(demo_clinical_notes.keys()),
-        key="selected_example",
+        key="selected_example_widget",
         on_change=update_example_note
     )
 
