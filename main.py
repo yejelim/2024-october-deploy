@@ -107,7 +107,7 @@ def initialize_session_state():
         'overall_decision': '',
         'explanations': [],
         'results_displayed': False,
-        'scoring_attempt_attempt': 0,      # 스코어 추출 재시도 횟수
+        'scoring_attempt': 0,      # 스코어 추출 재시도 횟수
         'embedding_search_attempt': 0,   # 임베딩 및 검색 재시도 횟수
         'max_attempts': 3,               # 최대 재시도 횟수
         'retry_type': None,              # 'scoring_attempt' 또는 'embedding_search'
@@ -516,7 +516,7 @@ def find_top_n_similar(embedding, vectors, metadatas, top_n=5):
 def evaluate_relevance_score_with_gpt(structured_input, items):
     try:
         # 점수 추출 시도 횟수 추가
-        st.session_state.scoring_attempt_attempt += 1
+        st.session_state.scoring_attempt += 1
 
         prompt_template = st.secrets["openai"]["prompt_scoring"]
         formatted_items = "\n\n".join([f"항목 {i+1}: {item['요약']}" for i, item in enumerate(items)])
@@ -554,14 +554,14 @@ def extract_scores(full_response, num_items):
 def reset_retry_states():
     st.session_state['retry_attempts'] = 0
     st.session_state['retry_type'] = None
-    st.session_state['scoring_attempt_attempt'] = 0
+    st.session_state['scoring_attempt'] = 0
     st.session_state['embedding_search_attempt'] = 0
 
 # 재시도 케이스: 스코어 추출 실패 시 재시도
 def retry_scoring_gpt(structured_input, items):
-    if st.session_state.scoring_attempt_attempt < st.session_state.max_attempts:
-        st.session_state.scoring_attempt_attempt += 1
-        st.warning(f"스코어 추출에 실패했습니다. 스코어링 GPT를 다시 호출합니다... (시도 {st.session_state.scoring_attempt_attempt}/{st.session_state.max_attempts})")
+    if st.session_state.scoring_attempt < st.session_state.max_attempts:
+        st.session_state.scoring_attempt += 1
+        st.warning(f"스코어 추출에 실패했습니다. 스코어링 GPT를 다시 호출합니다... (시도 {st.session_state.scoring_attempt}/{st.session_state.max_attempts})")
         # 스코어링 GPT 다시 호출
         new_response = evaluate_relevance_score_with_gpt(structured_input, items)
         return new_response
