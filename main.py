@@ -515,6 +515,9 @@ def find_top_n_similar(embedding, vectors, metadatas, top_n=5):
 # GPT-4 모델을 사용하여 연관성 점수를 평가하는 함수
 def evaluate_relevance_score_with_gpt(structured_input, items):
     try:
+        # 점수 추출 시도 횟수 추가
+        st.session_state.score_parsing_attempt += 1
+
         prompt_template = st.secrets["openai"]["prompt_scoring"]
         formatted_items = "\n\n".join([f"항목 {i+1}: {item['요약']}" for i, item in enumerate(items)])
         prompt = prompt_template.format(user_input=structured_input, items=formatted_items)
@@ -534,7 +537,7 @@ def evaluate_relevance_score_with_gpt(structured_input, items):
         return result
 
     except Exception as e:
-        st.error(f"GPT 모델 호출 중 오류 발생: {e}")
+        st.error(f"스코어 추출을 위한 GPT 모델 호출 중 오류 발생: {e}")
         return None
 
 # 점수 추출 함수
