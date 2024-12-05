@@ -117,6 +117,7 @@ def initialize_session_state():
         'scores': {},
         'retry_attempts': 0,
         'upgraded_note': None,
+        'opposition_opinion': None,
         'copy_text': '',
         'department': department_options[0],
         'selected_example': "없음",
