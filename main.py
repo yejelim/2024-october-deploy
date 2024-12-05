@@ -17,7 +17,7 @@ st.set_page_config(
 
 #예시 임상노트 데이터 사용자가 선택할 수 있게 추가
 demo_clinical_notes = {
-    "신경외과-사례1": ("신경외과 (Neuro-Surgery)", ''' 
+    "척추관절질환-사례1": ("척추관절질환", ''' 
 1달 전 무거운 것 들다가 
 우측 엉치 통증 발생
 우측 종아리, 발바닥 전체가 쥐난다
@@ -91,7 +91,7 @@ Appendectomy
 }
 
 department_options = [
-    "신경외과 (Neuro-Surgery)",
+    "척추관절질환",
     "혈관외과 (Vascular Surgery)",
     "대장항문외과 (Colorectal Surgery)",
     "정맥경장영양 (TPN)"
@@ -315,7 +315,7 @@ def handle_agreement_state():
 
 # 분과 데이터셋: 추가될 때마다 업데이트 할 부분
 department_datasets = {
-    "신경외과 (Neuro-Surgery)": {
+    "척추관절질환": {
         "bucket_name": "hemochat-rag-database",
         "file_key": "18_aga_tagged_embedded_data.json"
     },
@@ -832,6 +832,24 @@ def display_results_and_analysis():
             else:
                 st.write("업그레이드된 임상노트를 생성하는 중 문제가 발생했습니다.")
 
+        # 이의제기 소견서 생성 및 표시
+        if st.session_state['opposition_opinion'] is None:
+            opposition_opinion = generate_opposition_opinion(
+                st.session_state.user_input,
+                st.session_state.explanations
+            )
+            st.session_state['opposition_opinion'] = opposition_opinion
+
+        st.subheader("이의제기 소견서를 미리 작성해드립니다.")
+        with st.expander("이의제기 소견서 미리보기"):
+            if 'opposition_opinion' in st.session_state:
+                opposition_opinion = st.session_state['opposition_opinion']
+                opinion_area = st.text_area("이의제기 소견서", value=opposition_opinion, height=500)
+            else:
+                st.write("이의제기 소견서를 생성하는 중 문제가 발생했습니다.")
+
+
+
 
 # 채팅 기능 추가: 이전 내용들을 대화 내역에 추가하는 함수
 def add_to_conversation(role, message):
@@ -1015,6 +1033,42 @@ def generate_upgraded_clinical_note(overall_decision, user_input, explanations):
 
     except Exception as e:
         st.error(f"업그레이드된 임상노트 생성 중 오류 발생: {e}")
+        st.exception(e)
+        return None
+
+
+# 삭감을 가정하고 미리 이의제기 소견서를 생성해주는 함수
+def generate_opposition_opinion(user_input, explanations):
+    try:
+        prompt_template = st.secrets["openai"]["prompt_opposition_opinion"]
+
+        # explanations에서 필요한 내용을 추출하여 explanations_text 생성
+        explanations_text = "\n\n".join([
+            f"\n{explanation.get('content_after_4', '')}"
+            for explanation in explanations
+        ])
+
+        prompt = prompt_template.format(
+            user_input=user_input,
+            explanations_text=explanations_text
+        )
+
+        with st.spinner("이의제기 소견서 생성 중..."):
+            response = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "당신은 의료 문서를 작성하는 전문가입니다."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.5,
+            )
+
+        opposition_opinion = response.choices[0].message.content.strip()
+        return opposition_opinion
+    
+    except Exception as e:
+        st.error(f"이의제기 소견서 생성 중 오류 발생: {e}")
         st.exception(e)
         return None
 
